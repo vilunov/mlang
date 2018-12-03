@@ -18,6 +18,18 @@ class DslTest extends FlatSpec {
       } {
         move(3)
       }
+    } ++ Program {
+      move(33)
+      cond ("shrek") {
+        move(13)
+        move(23)
+      } {
+        cond ("inception layer") {
+          move(228)
+        } {
+          move(1488)
+        }
+      }
     } compile()
 
     assertResult(List(
@@ -30,8 +42,27 @@ class DslTest extends FlatSpec {
           InstructionMoveConst(1),
           InstructionMoveConst(2),
         ),
-        List(InstructionMoveConst(3))
-      )
+        List(
+          InstructionMoveConst(3),
+        )
+      ),
+      InstructionMoveConst(33),
+      InstructionCondition(ExpressionIdent("shrek"),
+        List(
+          InstructionMoveConst(13),
+          InstructionMoveConst(23),
+        ),
+        List(
+          InstructionCondition(ExpressionIdent("inception layer"),
+            List(
+              InstructionMoveConst(228),
+            ),
+            List(
+              InstructionMoveConst(1488),
+            )
+          ),
+        )
+      ),
     ))(program.instructions)
   }
 
