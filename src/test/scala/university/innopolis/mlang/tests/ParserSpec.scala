@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.{CharStreams, CommonTokenStream}
 import university.innopolis.mlang.parser._
 import university.innopolis.mlang.parser.MlangParser._
 
-class ParserSpec extends FlatSpec with Matchers {
+class ParserSpec extends FlatSpec {
 
   "val kek = 1337;" should "be parsed" in {
     val input = CharStreams.fromString("val kek = 1337;")
