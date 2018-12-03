@@ -1,5 +1,9 @@
 package university.innopolis.mlang.backends
 
-trait Backend {
+import university.innopolis.mlang.program.Program
 
+trait Backend {
+  type Output
+
+  def convert(p: Program): Output
 }
