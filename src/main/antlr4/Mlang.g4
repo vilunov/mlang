@@ -1,14 +1,14 @@
 grammar Mlang;
 program
-    : memoryBlock programBlock
+    : memoryBlock eos programBlock
     ;
 
 memoryBlock
-    : 'memory' WS? '{' valDecl* eos '}' eos
+    : 'memory' WS? '{' (valDecl eos)* '}'
     ;
 
 programBlock
-    : 'program' WS? '{' statement* eos '}' eos
+    : 'program' WS? '{' (statement eos)* '}'
     ;
 
 statement
@@ -16,7 +16,7 @@ statement
     ;
 
 valDecl
-    : Identifier '=' Literal eos
+    : IDENTIFIER '=' LITERAL
     ;
 
 eos
@@ -28,8 +28,8 @@ WS
     : [ \t\r\n]+ -> skip
     ;
 
-Identifier
-    : Letter+
+IDENTIFIER
+    : LETTER ( LETTER | DIGIT )*
     ;
 
 Command
@@ -38,43 +38,43 @@ Command
 
 // Literals
 
-Literal
-    : DecimalLiteral
-    | StringLiteral
-    | FloatLiteral
+LITERAL
+    : INT_LIT
+    | STRING_LIT
+    | INT_LIT
     ;
 
-fragment StringLiteral
-    : '\'' Letter+ '\''
+STRING_LIT
+    : '\'' LETTER+ '\''
     ;
 
-fragment DecimalLiteral
+INT_LIT
     : '0'
-    | NonZeroDigit Digit*
+    | NON_ZERO_DIGIT DIGIT*
     ;
 
-fragment FloatLiteral
-    : Digit* '.' Digit+
+FLOAT_LIT
+    : DIGIT* '.' DIGIT+
     ;
 
-fragment Digit
+fragment DIGIT
     : '0'
-    | NonZeroDigit
+    | NON_ZERO_DIGIT
     ;
 
-fragment NonZeroDigit
+fragment NON_ZERO_DIGIT
     : '1' .. '9'
     ;
 
-fragment Letter
-    : Upper
-    | Lower
+fragment LETTER
+    : UPPER
+    | LOWER
     ;
 
-fragment Upper
+fragment UPPER
     : 'A'  ..  'Z' | '$' | '_'
     ;
 
-fragment Lower
+fragment LOWER
     : 'a' .. 'z'
     ;
