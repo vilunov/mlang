@@ -1,4 +1,8 @@
 grammar Mlang;
+
+// PARSER
+// Main language structures
+
 program
     : memoryBlock eos programBlock
     ;
@@ -8,32 +12,53 @@ memoryBlock
     ;
 
 programBlock
-    : 'program' WS? '{' (statement eos)* '}'
+    : 'program' WS? statementBlock
     ;
 
+// Statements
+
 statement
-    : Command eos
+    : command
+    | assignStatement
+    ;
+
+statementBlock
+    :'{' (statement eos)* '}'
+    ;
+
+assignStatement
+    : IDENTIFIER '=' ( LITERAL | IDENTIFIER )
     ;
 
 valDecl
     : IDENTIFIER '=' LITERAL
     ;
 
+// Commands
+
+command
+    : moveCommand
+    ;
+
+moveCommand
+    : 'move' IDENTIFIER eos
+    | 'move' IDENTIFIER parameterList
+    ;
+
+parameterList
+    :
+    ;
+
 eos
     : ';'
+    | TERMINATOR
     | EOF
     ;
 
-WS
-    : [ \t\r\n]+ -> skip
-    ;
+// LEXER
 
 IDENTIFIER
     : LETTER ( LETTER | DIGIT )*
-    ;
-
-Command
-    : 'move'
     ;
 
 // Literals
@@ -78,3 +103,19 @@ fragment UPPER
 fragment LOWER
     : 'a' .. 'z'
     ;
+
+// Utility
+
+KEYWORDS
+    : 'memory'
+    | 'program'
+    | 'move'
+    ;
+
+WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+TERMINATOR
+	: [\r\n]+ -> channel(HIDDEN)
+	;
