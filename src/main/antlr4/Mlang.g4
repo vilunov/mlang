@@ -1,6 +1,27 @@
 grammar Mlang;
 program
-    : topLevelDecl*
+    : memoryBlock programBlock
+    ;
+
+memoryBlock
+    : 'memory' WS? '{' valDecl* eos '}' eos
+    ;
+
+programBlock
+    : 'program' WS? '{' statement* eos '}' eos
+    ;
+
+statement
+    : Command eos
+    ;
+
+valDecl
+    : Identifier '=' Literal eos
+    ;
+
+eos
+    : ';'
+    | EOF
     ;
 
 WS
@@ -8,37 +29,27 @@ WS
     ;
 
 Literal
-    : DecimalNumeral
+    : DecimalLiteral
+    | StringLiteral
     ;
 
 Identifier
     : Letter+
     ;
 
-topLevelDecl
-    : valDecl
+Command
+    : 'move'
     ;
 
-type
-    : Identifier
+fragment StringLiteral
+    : Letter+
     ;
 
-valDecl
-    : 'val' Identifier '=' Literal ';'
-    | 'var' Identifier '=' Literal ';'
-    ;
-
-fragment Val : 'val';
-fragment Semicolon : ';';
-fragment Keyword
-    : 'val'
-    | ';'
-    ;
-
-fragment DecimalNumeral
+fragment DecimalLiteral
     : '0'
     | NonZeroDigit Digit*
     ;
+
 fragment Digit
     : '0'
     | NonZeroDigit
@@ -47,13 +58,15 @@ fragment NonZeroDigit
     : '1' .. '9'
     ;
 
-fragment Upper
-    : 'A'  ..  'Z' | '$' | '_'
-    ;
-fragment Lower
-    : 'a' .. 'z'
-    ;
 fragment Letter
     : Upper
     | Lower
+    ;
+
+fragment Upper
+    : 'A'  ..  'Z' | '$' | '_'
+    ;
+
+fragment Lower
+    : 'a' .. 'z'
     ;
