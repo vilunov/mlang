@@ -4,10 +4,21 @@ import java.time.LocalDateTime
 
 case class FanucProgram(name: String,
                         attributes: Attributes,
-                        instructions: List[FanucInstruction]) {
+                        instructions: Instructions,
+                        positions: Positions) {
+
+  require(attributes.lineCount == instructions.instructions.length)
+
   override def toString: String =
-    "/PROG  " + name + '\n' +
-      "/ATTR\n" + attributes.toString
+    s"""/PROG  $name
+       |/ATTR
+       |${attributes.toString}
+       |/MN
+       |$instructions
+       |/POS
+       |$positions
+       |/END
+       |""".stripMargin
 
 }
 
@@ -22,17 +33,21 @@ case class Attributes(owner: String,
                       memorySize: Int,
                       protect: ProtectType = ProtectTypeReadWrite,
                       tcd: TCD = TCD()) {
+
+  require(progSize >= 0)
+  require(version >= 0)
+  require(memorySize >= 0)
+
   override def toString: String =
-    s"""OWNER		= $owner
-       |COMMENT		= "$comment"
-       |PROG_SIZE	= $progSize
+    s"""OWNER		= $owner;
+       |COMMENT		= "$comment";
+       |PROG_SIZE	= $progSize;
        |CREATE		= DATE 18-10-10  TIME 23:50:10;
        |MODIFIED	= DATE 18-10-10  TIME 23:56:44;
-       |FILE_NAME	= $fileName
-       |VERSION		= $version
-       |LINE_COUNT	= $lineCount
-       |MEMORY_SIZE	= $memorySize
-       |""".stripMargin
+       |FILE_NAME	= $fileName;
+       |VERSION		= $version;
+       |LINE_COUNT	= $lineCount;
+       |MEMORY_SIZE	= $memorySize;""".stripMargin
 }
 
 case class TCD(stackSize: Int = 0,
@@ -49,8 +64,7 @@ case class TCD(stackSize: Int = 0,
        |$idnt TIME_SLICE	$timeSlice
        |$idnt BUSY_LAMP_OFF	$busyLampOff
        |$idnt ABORT_REQUEST	$abortRequest
-       |$idnt PAUSE_REQUEST	$pauseRequest
-       |""".stripMargin
+       |$idnt PAUSE_REQUEST	$pauseRequest""".stripMargin
 }
 
 sealed trait ProtectType
@@ -62,19 +76,19 @@ case object ProtectTypeReadWrite extends ProtectType {
 sealed trait FanucInstruction
 
 case class UFrame(i: Int) extends FanucInstruction {
-  override def toString: String = s"  UFRAME_NUM=$i"
+  override def toString: String = s"UFRAME_NUM=$i"
 }
 
 case class UTool(i: Int) extends FanucInstruction {
-  override def toString: String = s"  UTOOL_NUM=$i"
+  override def toString: String = s"UTOOL_NUM=$i"
 }
 
 case class Payload(i: Int) extends FanucInstruction {
-  override def toString: String = s"  PAYLOAD[$i]"
+  override def toString: String = s"PAYLOAD[$i]"
 }
 
 case class Override(i: Int) extends FanucInstruction {
-  override def toString: String = s"  OVERRIDE=$i%"
+  override def toString: String = s"OVERRIDE=$i%"
 }
 
 sealed trait Register
@@ -120,7 +134,8 @@ abstract class MoveInstruction(val moveType: Char) extends FanucInstruction {
   val velocityType: VelocityType
   val smoothnessType: SmoothnessType
 
-  override def toString: String = s"$moveType $pointRegister $velocity$velocityType $smoothnessType"
+  override def toString: String =
+    s"$moveType $pointRegister $velocity$velocityType $smoothnessType"
 }
 
 case class LinearInstruction(pointRegister: PointRegister,
@@ -155,7 +170,10 @@ case class ArcInstruction(pointRegister: PointRegister,
 
 sealed trait Coordinates
 
-case class CartesianCoordinates(x: Double, y: Double, z: Double, w: Double, p: Double, r: Double) extends Coordinates {
+case class CartesianCoordinates(x: Double, y: Double, z: Double,
+                                w: Double, p: Double, r: Double)
+  extends Coordinates {
+
   override def toString: String =
     f"""	X =$x%10.3f  mm,	Y =$y%10.3f  mm,	Z =$z%10.3f  mm,
        |	W =$w%10.3f deg,	P =$p%10.3f deg,	R =$r%10.3f deg
@@ -165,12 +183,13 @@ case class CartesianCoordinates(x: Double, y: Double, z: Double, w: Double, p: D
 case class JointCoordinates(joints: List[Double]) extends Coordinates {
   override def toString: String =
     joints.zipWithIndex.map { case (j, i) =>
-      val suffix = if (i + 1 == joints.length) "\n" else if (i % 3 == 2) ",\n" else ","
+      val suffix =
+        if (i + 1 == joints.length) "\n" else if (i % 3 == 2) ",\n" else ","
       f"J${i + 1}=$j%10.3f deg$suffix"
     }.mkString("\t", "\t", "")
 }
 
-trait Point {
+sealed trait Point {
   val userFrame: Int
   val userTool: Int
   val coordinates: Coordinates
@@ -182,7 +201,8 @@ case class CartesianPoint(userFrame: Int,
                           config: String)
   extends Point {
 
-  override def toString: String = s"	UF : $userFrame, UT : $userTool,\t\tCONFIG : '$config',\n$coordinates"
+  override def toString: String =
+    s"	UF : $userFrame, UT : $userTool,\t\tCONFIG : '$config',\n$coordinates"
 }
 
 case class JointPoint(userFrame: Int,
@@ -190,17 +210,31 @@ case class JointPoint(userFrame: Int,
                       coordinates: JointCoordinates)
   extends Point {
 
-  override def toString: String = s"	UF : $userFrame, UT : $userTool,\n$coordinates"
-}
-
-case class Position(internals: List[Point]) {
   override def toString: String =
-    internals.zipWithIndex.map { case (j, i) => s"	GP${i + 1}:\n$j"}.mkString
+    s"	UF : $userFrame, UT : $userTool,\n$coordinates"
 }
 
-
-case class Positions(positions: List[Position]) {
+case class Position(internals: Point*) {
   override def toString: String =
-    positions.zipWithIndex.map { case (j, i) => s"P[${i + 1}]{\n$j};"}.mkString("\n")
+    internals.zipWithIndex
+      .map { case (j, i) => s"	GP${i + 1}:\n$j" }
+      .mkString
 }
 
+
+case class Positions(positions: Position*) {
+  override def toString: String =
+    positions.zipWithIndex
+      .map { case (j, i) => s"P[${i + 1}]{\n$j};" }
+      .mkString("\n")
+}
+
+case class Instructions(instructions: FanucInstruction*) {
+  require(instructions.length <= 9999)
+
+  override def toString: String = {
+    instructions.zipWithIndex
+      .map { case(j, i) => f"$i%4d:$j    ;" }
+      .mkString("\n")
+  }
+}

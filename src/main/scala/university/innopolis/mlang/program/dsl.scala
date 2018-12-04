@@ -1,7 +1,5 @@
 package university.innopolis.mlang.program
 
-import scala.language.experimental.macros
-
 object dsl {
 
   def move(i: Int, speed: Option[Int] = None, trajectory: Option[String] = None)(implicit builder: BuildingContext) =
