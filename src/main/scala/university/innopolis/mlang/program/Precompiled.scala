@@ -6,5 +6,5 @@ class Precompiled private[program](private val instructions: List[Instruction] =
     new Precompiled(instructions ++ program.instructions)
 
   def compile(): Program =
-    new Program(instructions)
+    Program(instructions)
 }

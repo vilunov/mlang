@@ -3,34 +3,43 @@ package university.innopolis.mlang.tests
 import org.scalatest._
 
 import university.innopolis.mlang.program._
+import university.innopolis.mlang.program.dsl._
 
 class DslTest extends FlatSpec {
 
   "Complex program" should "evaluate correctly" in {
-    val program = Program {
-      move(1)
-      move(10)
-      "kek" := 1
-      move("kek")
-      cond ("kek") {
-        move(1)
-        move(2)
+    implicit val builder: BuildingContext = new BuildingContext
+
+    val k = 1
+
+    move(k)
+    move(10)
+    "kek" := 1
+    move("kek")
+    cond ("kek") {
+      move(k)
+      move(2)
+    } {
+      move(3)
+    }
+
+    val first = emit()
+
+    move(33)
+    cond ("shrek") {
+      move(13)
+      move(23)
+    } {
+      cond ("inception layer") {
+        move(228)
       } {
-        move(3)
+        move(1488)
       }
-    } ++ Program {
-      move(33)
-      cond ("shrek") {
-        move(13)
-        move(23)
-      } {
-        cond ("inception layer") {
-          move(228)
-        } {
-          move(1488)
-        }
-      }
-    } compile()
+    }
+
+    val second = emit()
+
+    val program = (first ++ second).compile()
 
     assertResult(List(
       InstructionMoveConst(1),
@@ -67,9 +76,11 @@ class DslTest extends FlatSpec {
   }
 
   "Oneliner" should "evaluate correctly" in {
-    val program = Program {
-      move(1)
-    } compile()
+    implicit val builder: BuildingContext = new BuildingContext
+
+    move(1)
+
+    val program = emit().compile()
 
     assertResult(List(
       InstructionMoveConst(1),
