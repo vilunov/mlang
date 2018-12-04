@@ -24,6 +24,10 @@ object dsl {
     builder.blockCond()
   }
 
-  def emit()(implicit builder: BuildingContext): Precompiled =
+  def emit()(implicit builder: BuildingContext): List[Instruction] =
     builder.emit()
+
+  def compile(instructions: List[Instruction]) =
+    Program(instructions)
+
 }

@@ -39,7 +39,7 @@ class DslTest extends FlatSpec {
 
     val second = emit()
 
-    val program = (first ++ second).compile()
+    val program: Program = compile(first ++ second)
 
     assertResult(List(
       InstructionMoveConst(1),
@@ -80,7 +80,7 @@ class DslTest extends FlatSpec {
 
     move(1)
 
-    val program = emit().compile()
+    val program = compile(emit())
 
     assertResult(List(
       InstructionMoveConst(1),
