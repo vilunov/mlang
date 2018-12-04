@@ -76,3 +76,74 @@ case class Payload(i: Int) extends FanucInstruction {
 case class Override(i: Int) extends FanucInstruction {
   override def toString: String = s"  OVERRIDE=$i%"
 }
+
+sealed trait Register
+
+case class PointRegister(i: Int) extends Register {
+  override def toString: String = s"P[$i]"
+}
+
+sealed trait VelocityType {
+  val value: String
+
+  override def toString: String = value
+}
+
+abstract class JointVelocityType(val value: String) extends VelocityType
+
+abstract class OtherVelocityType(val value: String) extends VelocityType
+
+case object JointPercent extends JointVelocityType("%")
+case object JointSec extends JointVelocityType("sec")
+case object JointMsec extends JointVelocityType("msec")
+
+case object OtherMMSec extends OtherVelocityType("mm/sec")
+case object OtherCMMin extends OtherVelocityType("cm/min")
+case object OtherInchMin extends OtherVelocityType("inch/min")
+case object OtherDegSec extends OtherVelocityType("deg/sec")
+case object OtherSec extends OtherVelocityType("sec")
+case object OtherMsec extends OtherVelocityType("msec")
+
+sealed trait SmoothnessType
+
+case object SmoothnessFine extends SmoothnessType {
+  override def toString: String = s"FINE"
+}
+
+case class SmoothnessCNT(coef: Int) extends SmoothnessType {
+  override def toString: String = s"CNT$coef"
+}
+
+abstract class MoveInstruction(val moveType: Char) extends FanucInstruction {
+  val pointRegister: PointRegister
+  val velocity: Int
+  val velocityType: VelocityType
+  val smoothnessType: SmoothnessType
+
+  override def toString: String = s"$moveType $pointRegister $velocity$velocityType $smoothnessType"
+}
+
+case class LinearInstruction(pointRegister: PointRegister,
+                             velocity: Int,
+                             velocityType: OtherVelocityType,
+                             smoothnessType: SmoothnessType) extends MoveInstruction('L')
+
+case class CircularInstruction(pointRegister: PointRegister,
+                               secondPointRegister: PointRegister,
+                               velocity: Int,
+                               velocityType: OtherVelocityType,
+                               smoothnessType: SmoothnessType) extends MoveInstruction('C') {
+  override def toString: String = s"$moveType $pointRegister : $secondPointRegister $velocity$velocityType $smoothnessType"
+}
+
+case class JointInstruction(pointRegister: PointRegister,
+                            velocity: Int,
+                            velocityType: JointVelocityType,
+                            smoothnessType: SmoothnessType) extends MoveInstruction('J')
+
+case class ArcInstruction(pointRegister: PointRegister,
+                             velocity: Int,
+                             velocityType: OtherVelocityType,
+                             smoothnessType: SmoothnessType) extends MoveInstruction('A')
+
+
