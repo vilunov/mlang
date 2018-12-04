@@ -153,3 +153,54 @@ case class ArcInstruction(pointRegister: PointRegister,
   extends MoveInstruction('A')
 
 
+sealed trait Coordinates
+
+case class CartesianCoordinates(x: Double, y: Double, z: Double, w: Double, p: Double, r: Double) extends Coordinates {
+  override def toString: String =
+    f"""	X =$x%10.3f  mm,	Y =$y%10.3f  mm,	Z =$z%10.3f  mm,
+       |	W =$w%10.3f deg,	P =$p%10.3f deg,	R =$r%10.3f deg
+       |""".stripMargin
+}
+
+case class JointCoordinates(joints: List[Double]) extends Coordinates {
+  override def toString: String =
+    joints.zipWithIndex.map { case (j, i) =>
+      val suffix = if (i + 1 == joints.length) "\n" else if (i % 3 == 2) ",\n" else ","
+      f"J${i + 1}=$j%10.3f deg$suffix"
+    }.mkString("\t", "\t", "")
+}
+
+trait Point {
+  val userFrame: Int
+  val userTool: Int
+  val coordinates: Coordinates
+}
+
+case class CartesianPoint(userFrame: Int,
+                          userTool: Int,
+                          coordinates: CartesianCoordinates,
+                          config: String)
+  extends Point {
+
+  override def toString: String = s"	UF : $userFrame, UT : $userTool,\t\tCONFIG : '$config',\n$coordinates"
+}
+
+case class JointPoint(userFrame: Int,
+                      userTool: Int,
+                      coordinates: JointCoordinates)
+  extends Point {
+
+  override def toString: String = s"	UF : $userFrame, UT : $userTool,\n$coordinates"
+}
+
+case class Position(internals: List[Point]) {
+  override def toString: String =
+    internals.zipWithIndex.map { case (j, i) => s"	GP${i + 1}:\n$j"}.mkString
+}
+
+
+case class Positions(positions: List[Position]) {
+  override def toString: String =
+    positions.zipWithIndex.map { case (j, i) => s"P[${i + 1}]{\n$j};"}.mkString("\n")
+}
+
