@@ -6,10 +6,6 @@ scalaVersion := "2.12.7"
 
 enablePlugins(Antlr4Plugin)
 
-lazy val macros = (project in file("macros")).settings(
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
-)
-
 lazy val root = (project in file(".")).settings(
   libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "3.0.5",
@@ -17,4 +13,4 @@ lazy val root = (project in file(".")).settings(
   antlr4Version in Antlr4 := "4.7.1",
   antlr4PackageName in Antlr4 := Some("university.innopolis.mlang.parser"),
   mainClass in run := Some("university.innopolis.mlang.Main"),
-).dependsOn(macros)
+)
