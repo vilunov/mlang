@@ -12,7 +12,7 @@ class DslTest extends FlatSpec {
 
     val k = 1
 
-    move(k)
+    move(k, speed = Some(10))
     move(10)
     "kek" := 1
     move("kek")

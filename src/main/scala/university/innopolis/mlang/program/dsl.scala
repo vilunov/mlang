@@ -4,7 +4,7 @@ import scala.language.experimental.macros
 
 object dsl {
 
-  def move(i: Int)(implicit builder: BuildingContext): Unit =
+  def move(i: Int, speed: Option[Int] = None, trajectory: Option[String] = None)(implicit builder: BuildingContext) =
     builder.add(InstructionMoveConst(i))
 
   def move(i: String)(implicit builder: BuildingContext): Unit =

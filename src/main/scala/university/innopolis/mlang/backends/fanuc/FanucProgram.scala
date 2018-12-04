@@ -126,24 +126,30 @@ abstract class MoveInstruction(val moveType: Char) extends FanucInstruction {
 case class LinearInstruction(pointRegister: PointRegister,
                              velocity: Int,
                              velocityType: OtherVelocityType,
-                             smoothnessType: SmoothnessType) extends MoveInstruction('L')
+                             smoothnessType: SmoothnessType)
+  extends MoveInstruction('L')
 
 case class CircularInstruction(pointRegister: PointRegister,
                                secondPointRegister: PointRegister,
                                velocity: Int,
                                velocityType: OtherVelocityType,
-                               smoothnessType: SmoothnessType) extends MoveInstruction('C') {
-  override def toString: String = s"$moveType $pointRegister : $secondPointRegister $velocity$velocityType $smoothnessType"
+                               smoothnessType: SmoothnessType)
+  extends MoveInstruction('C') {
+
+  override def toString: String =
+    s"$moveType $pointRegister : $secondPointRegister $velocity$velocityType $smoothnessType"
 }
 
 case class JointInstruction(pointRegister: PointRegister,
                             velocity: Int,
                             velocityType: JointVelocityType,
-                            smoothnessType: SmoothnessType) extends MoveInstruction('J')
+                            smoothnessType: SmoothnessType)
+  extends MoveInstruction('J')
 
 case class ArcInstruction(pointRegister: PointRegister,
-                             velocity: Int,
-                             velocityType: OtherVelocityType,
-                             smoothnessType: SmoothnessType) extends MoveInstruction('A')
+                          velocity: Int,
+                          velocityType: OtherVelocityType,
+                          smoothnessType: SmoothnessType)
+  extends MoveInstruction('A')
 
 
