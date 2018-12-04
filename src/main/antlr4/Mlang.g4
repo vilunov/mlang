@@ -28,11 +28,6 @@ WS
     : [ \t\r\n]+ -> skip
     ;
 
-Literal
-    : DecimalLiteral
-    | StringLiteral
-    ;
-
 Identifier
     : Letter+
     ;
@@ -41,8 +36,16 @@ Command
     : 'move'
     ;
 
+// Literals
+
+Literal
+    : DecimalLiteral
+    | StringLiteral
+    | FloatLiteral
+    ;
+
 fragment StringLiteral
-    : Letter+
+    : '\'' Letter+ '\''
     ;
 
 fragment DecimalLiteral
@@ -50,10 +53,15 @@ fragment DecimalLiteral
     | NonZeroDigit Digit*
     ;
 
+fragment FloatLiteral
+    : Digit* '.' Digit+
+    ;
+
 fragment Digit
     : '0'
     | NonZeroDigit
     ;
+
 fragment NonZeroDigit
     : '1' .. '9'
     ;
