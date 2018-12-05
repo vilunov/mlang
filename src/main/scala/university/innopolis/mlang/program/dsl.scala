@@ -2,7 +2,8 @@ package university.innopolis.mlang.program
 
 object dsl {
 
-  def move(i: Int, speed: Option[Int] = None, trajectory: Option[String] = None)(implicit builder: BuildingContext) =
+  def move(i: Int, speed: Option[Int] = None, trajectory: Option[String] = None)
+          (implicit builder: BuildingContext): Unit =
     builder.add(InstructionMoveConst(i))
 
   def move(i: String)(implicit builder: BuildingContext): Unit =
@@ -13,7 +14,8 @@ object dsl {
       builder.add(InstructionAssign(ident, i))
   }
 
-  def cond(p: point)(first: => Unit)(second: => Unit)(implicit builder: BuildingContext): Unit = {
+  def cond(p: point)(first: => Unit)(second: => Unit)
+          (implicit builder: BuildingContext): Unit = {
     builder.add(ExpressionIdent(p.ident))
     builder.delve()
     first
@@ -26,6 +28,6 @@ object dsl {
     builder.emit()
 
   def compile(instructions: List[Instruction]) =
-    Program(instructions)
+    Program(Map(), instructions)
 
 }

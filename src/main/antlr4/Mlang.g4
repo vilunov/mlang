@@ -214,12 +214,11 @@ UNARY_OP
 KEYWORDS
     : 'memory'
     | 'program'
-    | 'true'
-    | 'false'
     | 'if'
     | 'for'
     | 'to'
     | 'in'
+    | 'else'
     ;
 
 WS
