@@ -75,9 +75,12 @@ operand
     ;
 
 typeExpression
-    : TYPE '(' parameterList ')'
+    : type '(' parameterList ')'
     ;
 
+type
+    : 'Point'
+    ;
 // Commands
 
 command
@@ -139,10 +142,6 @@ FLOAT_LIT
 BOOLEAN_LIT
     : 'true'
     | 'false'
-    ;
-
-TYPE
-    : 'Point'
     ;
 
 fragment DIGIT
