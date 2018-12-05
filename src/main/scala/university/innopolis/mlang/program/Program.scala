@@ -33,7 +33,7 @@ final case class StatementBlock(statements: List[Statement])
 
 sealed trait Statement
 sealed trait Command extends Statement
-final case class MoveCommand(moveTarget: MoveTarget, parameters: Map[String, Operand]) extends Command
+final case class MoveCommand(moveTarget: MoveTarget, parameters: Map[String, Operand] = Map.empty) extends Command
 
 final case class AssignmentStatement(left: Expression, right: Expression) extends Statement
 final case class IfStatement(condition: Expression,

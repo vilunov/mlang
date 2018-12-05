@@ -16,7 +16,7 @@ object dsl {
   }
 
   def move(i: String)(implicit builder: BuildingContext): Unit =
-    builder.add(MoveCommand(Identifier(i), Map.empty))
+    builder.add(MoveCommand(Identifier(i)))
 
   implicit class identifier(val ident: String) {
     def :=(i: Double)(implicit builder: BuildingContext): Unit =
