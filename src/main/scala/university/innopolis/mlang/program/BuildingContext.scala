@@ -8,12 +8,12 @@ import scala.collection.mutable
   */
 class BuildingContext {
 
-  private type Block = mutable.Buffer[Instruction]
+  private type Block = mutable.Buffer[Statement]
   private[this] val blockStack: mutable.ArrayStack[Block] = new mutable.ArrayStack()
   private[this] val varStack: mutable.ArrayStack[Expression] = new mutable.ArrayStack()
   delve()
 
-  def add(instruction: Instruction): Unit =
+  def add(instruction: Statement): Unit =
     blockStack.head.append(instruction)
 
   def add(expression: Expression): Unit =
@@ -26,7 +26,7 @@ class BuildingContext {
     * Flush the internal state and create a program chunk
     * @return program chunk containing instructions
     */
-  def emit(): List[Instruction] = {
+  def emit(): List[Statement] = {
     require(blockStack.length == 1 && varStack.isEmpty,
       "Stacks should be empty at the end")
 
@@ -39,7 +39,11 @@ class BuildingContext {
     val blockElse = blockStack.pop().toList
     val blockIf = blockStack.pop().toList
     val condition = varStack.pop()
-    add(InstructionCondition(condition, blockIf, blockElse))
+    add(IfStatement(
+      condition,
+      StatementBlock(blockIf),
+      Option(blockIf).filter(_.nonEmpty).map(StatementBlock),
+    ))
   }
 
 }

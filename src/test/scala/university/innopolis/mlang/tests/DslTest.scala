@@ -72,7 +72,7 @@ class DslTest extends FlatSpec {
           ),
         )
       ),
-    ))(program.instructions)
+    ))(program.statements)
   }
 
   "Oneliner" should "evaluate correctly" in {
@@ -84,7 +84,7 @@ class DslTest extends FlatSpec {
 
     assertResult(List(
       InstructionMoveConst(1),
-    ))(program.instructions)
+    ))(program.statements)
   }
 
 }

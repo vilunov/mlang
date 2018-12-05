@@ -35,9 +35,11 @@ object Parser {
     val program = parser.program()
     Option(program.exception).foreach(throw _)
 
-    val memory: Map[String, Any] = program
+    val memory: Map[String, Expression] = program
       .memoryBlock().valDecl().asScala
-      .map { i => (i.IDENTIFIER().toString, i.expression().toString()) }.toMap
+      .map { i => (i.IDENTIFIER().toString, i.expression()) }.toMap.mapValues {
+        _ => IntLiteral(0)
+      }
     val instructions: Seq[StatementContext] = program
       .programBlock().statementBlock().statement().asScala
 

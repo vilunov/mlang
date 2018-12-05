@@ -17,7 +17,7 @@ trait ParserSpecData {
 
   val expectedSimple: Program = Program(
     memory = Map(),
-    instructions = List()
+    statements = List()
   )
 }
 

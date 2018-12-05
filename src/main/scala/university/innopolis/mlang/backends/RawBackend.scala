@@ -5,7 +5,5 @@ import university.innopolis.mlang.program.Program
 object RawBackend extends Backend {
   override type Output = String
 
-  override def convert(p: Program): String = ???
-
-  def read(input: String): Program = ???
+  override def apply(p: Program): String = p.toString
 }

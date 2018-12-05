@@ -21,9 +21,11 @@ trait FanucTestData {
 
   val testPositions: Positions = Positions(
     Position(
-      CartesianPoint(3, 3,
+      CartesianPoint(
+        3, 3,
         CartesianCoordinates(0, 357.153, 63.185, -0.995, -6.457, -90.779),
-        "N U T, 0, 0, 1"),
+        "N U T, 0, 0, 1"
+      ),
       JointPoint(3, 3, JointCoordinates(List(15.648)))
     )
   )
