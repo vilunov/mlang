@@ -42,7 +42,12 @@ object Parser {
       }
     val instructions: Seq[StatementContext] = program
       .programBlock().statementBlock().statement().asScala
+    program.programBlock().statementBlock().statement()
+    var a: AssignStatementContext = program.programBlock().statementBlock().statement(0).assignStatement()
+    var b: CommandContext = program.programBlock().statementBlock().statement(0).command()
+    var c: ForStatementContext = program.programBlock().statementBlock().statement(0).forStatement()
 
+    //    c.
     Program(memory, List())
   }
 }
