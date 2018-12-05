@@ -3,7 +3,7 @@ package university.innopolis.mlang.backends.fanuc
 import java.time.LocalDateTime
 
 import university.innopolis.mlang.backends.Backend
-import university.innopolis.mlang.program.{Expression => ProgramExpression, _}
+import university.innopolis.mlang.program.ast.{Expression => ProgramExpression, _}
 
 object FanucBackend extends Backend {
   override type Output = FanucProgram

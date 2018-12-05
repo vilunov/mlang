@@ -5,6 +5,7 @@ import scala.collection.JavaConverters._
 import org.antlr.v4.runtime._
 
 import university.innopolis.mlang.parser._
+import university.innopolis.mlang.program.ast._
 import university.innopolis.mlang.parser.MlangParser._
 
 object Parser {

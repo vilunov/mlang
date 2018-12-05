@@ -2,10 +2,28 @@ package university.innopolis.mlang.tests
 
 import org.scalatest._
 
-import university.innopolis.mlang.program._
 import university.innopolis.mlang.program.dsl._
+import university.innopolis.mlang.program.ast._
 
-class DslTest extends FlatSpec {
+trait DslSpecData {
+  lazy val programOneliner: Program = {
+    implicit val builder: BuildingContext = new BuildingContext
+
+    move(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+
+    compile(emit())
+  }
+
+  val expectedOneliner: List[MoveCommand] = List(
+    MoveCommand(TypeOperand(
+      Point,
+      Map("x" -> 1.0, "y" -> 1.0, "z" -> 1.0, "w" -> 1.0, "r" -> 1.0, "p" -> 1.0)
+        .mapValues(FloatLiteral),
+    )),
+  )
+}
+
+class DslTest extends FlatSpec with DslSpecData {
   /*
   "Complex program" should "evaluate correctly" in {
     implicit val builder: BuildingContext = new BuildingContext
@@ -77,19 +95,7 @@ class DslTest extends FlatSpec {
   */
 
   "Oneliner" should "evaluate correctly" in {
-    implicit val builder: BuildingContext = new BuildingContext
-
-    move(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
-
-    val program = compile(emit())
-
-    assertResult(List(
-      MoveCommand(TypeOperand(
-        Point,
-        Map("x" -> 1.0, "y" -> 1.0, "z" -> 1.0, "w" -> 1.0, "r" -> 1.0, "p" -> 1.0)
-          .mapValues(FloatLiteral),
-      )),
-    ))(program.statements)
+    assertResult(expectedOneliner)(programOneliner.statements)
   }
 
 }

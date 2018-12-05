@@ -1,4 +1,4 @@
-package university.innopolis.mlang.program
+package university.innopolis.mlang.program.ast
 
 /**
   * Internal representation of 'mlang' program
@@ -17,14 +17,15 @@ final case class UnaryOperatorExpression(unaryOp: UnaryOp,
 
 sealed trait Operand extends UnaryExpression
 sealed trait MoveTarget extends Operand
-final case class Identifier(ident: String) extends MoveTarget
+final case class Identifier(ident: String) extends MoveTarget {
+  require(ident.matches("[a-zA-Z][a-zA-Z0-9]+"))
+}
 final case class IntLiteral(value: Double) extends Operand
 final case class StringLiteral(value: String) extends Operand
 final case class FloatLiteral(value: Double) extends Operand
 final case class BooleanLiteral(value: Boolean) extends Operand
 final case class ExpressionOperand(expression: Expression) extends Operand
 final case class TypeOperand(typeLiteral: TypeLiteral, parameters: Map[String, Operand]) extends MoveTarget
-final case class ParameterDeclaration(identifier: Identifier, operand: Operand)
 
 final case class BinaryExpression(binOp: BinOp, left: Expression, right: Expression) extends Expression
 final case class DotExpression(expression: Expression, ident: String) extends Expression

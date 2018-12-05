@@ -1,0 +1,34 @@
+package university.innopolis.mlang.program.dsl
+
+import university.innopolis.mlang.program.ast._
+
+private[dsl] trait TrajectoryMixin {
+  sealed trait Trajectory {
+    def toTrajectoryProperty: Option[Operand]
+  }
+
+  case object Fine extends Trajectory {
+    override val toTrajectoryProperty = Some(StringLiteral("FINE"))
+  }
+
+  final case class Cnt(i: Int) extends Trajectory {
+    override val toTrajectoryProperty = Some(StringLiteral(s"CNT$i"))
+  }
+}
+
+private[dsl] trait VelocityMixin {
+  sealed trait Velocity {
+    def toVelocityProperty: Option[Operand]
+  }
+
+  implicit class IntegerVelocity(i: Int) extends Velocity {
+    override def toVelocityProperty: Option[Operand] = Some(IntLiteral(i))
+  }
+}
+
+private[dsl] trait TypesMixin extends TrajectoryMixin with VelocityMixin {
+  case object Undefined extends Trajectory with Velocity {
+    override val toTrajectoryProperty: Option[Operand] = None
+    override val toVelocityProperty: Option[Operand] = None
+  }
+}

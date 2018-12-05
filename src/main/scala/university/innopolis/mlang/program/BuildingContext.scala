@@ -2,6 +2,8 @@ package university.innopolis.mlang.program
 
 import scala.collection.mutable
 
+import university.innopolis.mlang.program.ast._
+
 /**
   * A context for constructing mlang programs.
   * Can be used with the DSL methods when used as an implicit value.
@@ -15,9 +17,6 @@ class BuildingContext {
 
   def add(instruction: Statement): Unit =
     blockStack.head.append(instruction)
-
-  def add(expression: Expression): Unit =
-    varStack.push(expression)
 
   def delve(): Unit =
     blockStack.push(mutable.Buffer.empty)
@@ -35,14 +34,21 @@ class BuildingContext {
     instructions.toList
   }
 
-  def blockCond(): Unit = {
+  def blockCond(condition: Expression): Unit = {
     val blockElse = blockStack.pop().toList
     val blockIf = blockStack.pop().toList
-    val condition = varStack.pop()
     add(IfStatement(
       condition,
       StatementBlock(blockIf),
       Option(blockIf).filter(_.nonEmpty).map(StatementBlock),
+    ))
+  }
+
+  def blockLoop(varName: Identifier, from: Int, to: Int): Unit = {
+    val body = blockStack.pop().toList
+    add(ForStatement(
+      ForClause(Some(varName), IntLiteral(from), IntLiteral(to)),
+      StatementBlock(body),
     ))
   }
 
