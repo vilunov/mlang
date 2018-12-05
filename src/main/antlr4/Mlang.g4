@@ -4,7 +4,7 @@ grammar Mlang;
 // Main language structures
 
 program
-    : memoryBlock eos programBlock
+    : memoryBlock programBlock
     ;
 
 memoryBlock
