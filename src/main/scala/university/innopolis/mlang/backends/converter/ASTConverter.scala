@@ -2,37 +2,55 @@ package university.innopolis.mlang.backends.converter
 
 import university.innopolis.mlang.backends.fanuc._
 import university.innopolis.mlang.parser.MlangParser._
-import university.innopolis.mlang.program.IfStatement
+import university.innopolis.mlang.program
+import university.innopolis.mlang.program._
 
 import scala.collection.mutable
 
-class ASTConverter(ast: Seq[StatementContext]) {
+class ASTConverter(ast: List[Statement]) {
   val positionRegisters: mutable.Map[String, Int] = mutable.Map[String, Int]()
+  val defaultSpeed: Int = 100
   var positionRegistersCount: Int = 0
 
   def convertAST(): List[FanucInstruction] = {
     val fanucInstructions: mutable.MutableList[FanucInstruction] = mutable.MutableList[FanucInstruction]()
 
-    ast.foreach(context => {
+    ast.foreach(statement => {
       var instruction: FanucInstruction = null
 
-      val assignment = context.assignStatement()
-      val ifStatement = context.ifStatement()
-      val commandStatement = context.command()
-      val forStatement = context.forStatement()
+      statement match {
+        case _move if statement.isInstanceOf[MoveCommand] => // MoveCommand
+          val move = statement.asInstanceOf[MoveCommand]
+          val target: MoveTarget = move.moveTarget
+          val params: Map[String, Operand] = move.parameters
 
-      if (assignment != null) {
-        instruction = convertAssignment(assignment)
-      } else if (commandStatement != null) {
-        instruction = convertCommand(commandStatement)
-      } else if (forStatement != null) {
-        instruction = convertFor(forStatement)
+          val moveRegister: MoveRegister = null
+
+          if (params.isEmpty) {
+            LinearInstruction(moveRegister, defaultSpeed, OtherMMSec, SmoothnessFine)
+          } else {
+            val trajectory: StringLiteral = params("trajectory").asInstanceOf[StringLiteral]
+            val speed: Int = params("speed").asInstanceOf[IntLiteral].value
+            val smoothness: Int = params("smoothness").asInstanceOf[IntLiteral].value
+            val smoothnessType: SmoothnessType = convertSmoothness(smoothness)
+
+            //todo: how to differentiate OtherMMSec, etc.???
+
+            trajectory.value match {
+              case "linear" => LinearInstruction(moveRegister, speed, OtherMMSec, smoothnessType)
+              case "joint" => JointInstruction(moveRegister, speed, JointPercent, smoothnessType)
+              case "arc" =>  ArcInstruction(moveRegister, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              case "" => CircularInstruction(moveRegister, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              case _ => ???
+            }
+          }
+        case _assignment if statement.isInstanceOf[AssignmentStatement] =>
+          val assignment = statement.asInstanceOf[AssignmentStatement]
       }
-//      else if (ifStatement != null) {
-//        instruction = convertIf(ifStatement)
 
       fanucInstructions += instruction
     })
+
 
     fanucInstructions.toList
   }
@@ -68,6 +86,13 @@ class ASTConverter(ast: Seq[StatementContext]) {
   }
 
   private[this] def convertFor(forStatement: ForStatementContext): FanucInstruction = ???
+
+  private[this] def convertSmoothness(smoothess: Int): SmoothnessType = {
+    smoothess match {
+      case x == 100 => SmoothnessFine
+      case x < 100 => SmoothnessCNT(x)
+    }
+  }
 
   private[this] def getPRIndex(name: String): Int = {
     positionRegisters.getOrElseUpdate(name, getFreePRIndex)

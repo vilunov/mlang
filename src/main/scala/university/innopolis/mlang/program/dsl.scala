@@ -3,7 +3,8 @@ package university.innopolis.mlang.program
 object dsl {
 
   def move(x: Double, y: Double, z: Double, w: Double, p: Double, r: Double,
-           speed: Option[Int] = None, trajectory: Option[String] = None)
+           speed: Option[Int] = None, trajectory: Option[String] = None,
+           smoothness: Option[Int] = None)
           (implicit builder: BuildingContext): Unit = {
     val params = Map("x" -> x, "y" -> y, "z" -> z, "w" -> w, "r" -> r, "p" -> p).mapValues(FloatLiteral)
     builder.add(MoveCommand(
@@ -11,6 +12,7 @@ object dsl {
       List(
         speed.map("speed" -> IntLiteral(_)),
         trajectory.map("trajectory" -> StringLiteral(_)),
+        smoothness.map("smoothness" -> IntLiteral(_)),
       ).flatten.toMap,
     ))
   }

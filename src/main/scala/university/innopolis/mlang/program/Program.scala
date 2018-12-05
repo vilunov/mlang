@@ -18,7 +18,7 @@ final case class UnaryOperatorExpression(unaryOp: UnaryOp,
 sealed trait Operand extends UnaryExpression
 sealed trait MoveTarget extends Operand
 final case class Identifier(ident: String) extends MoveTarget
-final case class IntLiteral(value: Double) extends Operand
+final case class IntLiteral(value: Int) extends Operand
 final case class StringLiteral(value: String) extends Operand
 final case class FloatLiteral(value: Double) extends Operand
 final case class BooleanLiteral(value: Boolean) extends Operand

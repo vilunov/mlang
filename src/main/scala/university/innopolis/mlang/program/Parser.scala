@@ -43,9 +43,6 @@ object Parser {
     val instructions: Seq[StatementContext] = program
       .programBlock().statementBlock().statement().asScala
 
-    val converter: ASTConverter = new ASTConverter(instructions)
-    converter.convertAST()
-
     Program(memory, List())
   }
 }
