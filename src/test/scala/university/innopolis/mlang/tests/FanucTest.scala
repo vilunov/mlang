@@ -31,9 +31,9 @@ trait FanucTestData {
   )
 
   val expectedInstructions: String =
-    """   0:UFRAME_NUM=0    ;
-      |   1:UTOOL_NUM=0    ;
-      |   2:L P[0] 0mm/sec FINE    ;""".stripMargin
+    """   1:UFRAME_NUM=0    ;
+      |   2:UTOOL_NUM=0    ;
+      |   3:L P[0] 0mm/sec FINE    ;""".stripMargin
 
   val testInstructions: Instructions = Instructions(
     UFrame(0),
@@ -86,6 +86,20 @@ class FanucTest extends FlatSpec with FanucTestData {
 
   "Instructions" should "serialize correctly" in {
     assertResult(expectedInstructions)(testInstructions.toString)
+  }
+
+  "Assignments" should "serialize correctly" in {
+    val expected = "R[1] = (R[2] - R[3]) MOD 5"
+
+    val actual = IntegerAssignment(
+      CommonRegister(1),
+      BinaryExpression(Mod,
+        PrimaryExpression(
+          BinaryExpression(Minus, CommonRegister(2), CommonRegister(3))
+        ),
+        IntegerExpression(5)))
+
+    assertResult(expected)(actual.toString)
   }
 
   "Program" should "serialize correctly" in {

@@ -3,12 +3,12 @@ package university.innopolis.mlang.backends.fanuc
 import java.time.LocalDateTime
 
 import university.innopolis.mlang.backends.Backend
-import university.innopolis.mlang.program._
+import university.innopolis.mlang.program.{Expression => ProgramExpression, _}
 
 object FanucBackend extends Backend {
   override type Output = FanucProgram
 
-  private def validateConsts(definitions: Map[String, Expression]): Map[String, Position] =
+  private def validateConsts(definitions: Map[String, ProgramExpression]): Map[String, Position] =
     definitions.mapValues {
       case TypeOperand(Point, parameters) =>
         val params = parameters.mapValues {

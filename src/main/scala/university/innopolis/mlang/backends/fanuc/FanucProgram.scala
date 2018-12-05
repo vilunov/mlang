@@ -93,8 +93,57 @@ case class Override(i: Int) extends FanucInstruction {
 
 sealed trait Register
 
-case class PointRegister(i: Int) extends Register {
+case class CommonRegister(i: Int) extends Register with Expression {
+  override def toString: String = s"R[$i]"
+}
+
+sealed trait MoveRegister
+
+case class PointRegister(i: Int) extends MoveRegister {
   override def toString: String = s"P[$i]"
+}
+
+case class PositionRegister(i: Int) extends MoveRegister {
+  override def toString: String = s"PR[$i]"
+}
+
+case class PositionCoordinateRegister(i: Int, j: Int) extends Register with Expression {
+  override def toString: String = s"PR[$i, $j]"
+}
+
+sealed trait Assignment extends FanucInstruction
+case class IntegerAssignment(register: Register, expression: Expression) extends Assignment {
+  override def toString: String = s"$register = $expression"
+}
+
+case class PointAssignment(pointRegister: PositionRegister, expression: MoveRegister) extends Assignment {
+  override def toString: String = s"$pointRegister = $expression"
+}
+
+sealed trait Expression
+
+case class IntegerExpression(value: Int) extends Expression {
+  override def toString: String = value.toString
+}
+
+sealed trait Operator
+class OperatorImpl(val representation: String) extends Operator {
+  override def toString: String = representation
+}
+
+case object Plus extends OperatorImpl("+")
+case object Minus extends OperatorImpl("-")
+case object Multiplication extends OperatorImpl("*")
+case object Division extends OperatorImpl("/")
+case object Div extends OperatorImpl("DIV")
+case object Mod extends OperatorImpl("MOD")
+
+case class BinaryExpression(operator: Operator, left: Expression, right: Expression) extends Expression {
+  override def toString: String = s"$left $operator $right"
+}
+
+case class PrimaryExpression(expression: Expression) extends Expression {
+  override def toString: String = s"($expression)"
 }
 
 sealed trait VelocityType {
@@ -129,7 +178,7 @@ case class SmoothnessCNT(coef: Int) extends SmoothnessType {
 }
 
 abstract class MoveInstruction(val moveType: Char) extends FanucInstruction {
-  val pointRegister: PointRegister
+  val pointRegister: MoveRegister
   val velocity: Int
   val velocityType: VelocityType
   val smoothnessType: SmoothnessType
@@ -138,13 +187,13 @@ abstract class MoveInstruction(val moveType: Char) extends FanucInstruction {
     s"$moveType $pointRegister $velocity$velocityType $smoothnessType"
 }
 
-case class LinearInstruction(pointRegister: PointRegister,
+case class LinearInstruction(pointRegister: MoveRegister,
                              velocity: Int,
                              velocityType: OtherVelocityType,
                              smoothnessType: SmoothnessType)
   extends MoveInstruction('L')
 
-case class CircularInstruction(pointRegister: PointRegister,
+case class CircularInstruction(pointRegister: MoveRegister,
                                secondPointRegister: PointRegister,
                                velocity: Int,
                                velocityType: OtherVelocityType,
@@ -155,13 +204,13 @@ case class CircularInstruction(pointRegister: PointRegister,
     s"$moveType $pointRegister : $secondPointRegister $velocity$velocityType $smoothnessType"
 }
 
-case class JointInstruction(pointRegister: PointRegister,
+case class JointInstruction(pointRegister: MoveRegister,
                             velocity: Int,
                             velocityType: JointVelocityType,
                             smoothnessType: SmoothnessType)
   extends MoveInstruction('J')
 
-case class ArcInstruction(pointRegister: PointRegister,
+case class ArcInstruction(pointRegister: MoveRegister,
                           velocity: Int,
                           velocityType: OtherVelocityType,
                           smoothnessType: SmoothnessType)
@@ -234,7 +283,7 @@ case class Instructions(instructions: FanucInstruction*) {
 
   override def toString: String = {
     instructions.zipWithIndex
-      .map { case(j, i) => f"$i%4d:$j    ;" }
+      .map { case(j, i) => f"${i + 1}%4d:$j    ;" }
       .mkString("\n")
   }
 }
