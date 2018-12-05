@@ -64,13 +64,12 @@ expression
     ;
 
 unaryExpr
-    : operand
-    | UNARY_OP unaryExpr
+    : UNARY_OP* operand
     ;
 
 operand
     : IDENTIFIER
-    | LITERAL
+    | literal
     | '(' expression ')'
     | typeExpression
     ;
@@ -117,7 +116,7 @@ IDENTIFIER
 
 // Literals
 
-LITERAL
+literal
     : INT_LIT
     | STRING_LIT
     | FLOAT_LIT

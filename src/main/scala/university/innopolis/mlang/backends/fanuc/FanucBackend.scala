@@ -10,7 +10,7 @@ object FanucBackend extends Backend {
 
   private def validateConsts(definitions: Map[String, ProgramExpression]): Map[String, Position] =
     definitions.mapValues {
-      case TypeOperand(Point, parameters) =>
+      case UnaryExpression(TypeOperand(Point, parameters), List()) =>
         val params = parameters.mapValues {
           case FloatLiteral(value) => value
         }

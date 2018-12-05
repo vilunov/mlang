@@ -8,7 +8,10 @@ package object dsl extends TypesMixin with StatementsMixin {
 
   implicit class identifier(val ident: String) {
     def :=(i: Double)(implicit builder: BuildingContext): Unit =
-      builder.add(AssignmentStatement(Identifier(ident.ident), FloatLiteral(i)))
+      builder.add(AssignmentStatement(
+        UnaryExpression(Identifier(ident)),
+        UnaryExpression(FloatLiteral(i))
+      ))
   }
 
   def emit()(implicit builder: BuildingContext): List[Statement] =

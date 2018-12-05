@@ -11,16 +11,15 @@ case class Program(memory: Map[String, Expression],
   */
 sealed trait Expression
 
-sealed trait UnaryExpression extends Expression
-final case class UnaryOperatorExpression(unaryOp: UnaryOp,
-                                         unaryExpression: Option[UnaryExpression]) extends UnaryExpression
+final case class UnaryExpression(operand: Operand,
+                                 unaryOp: List[UnaryOp] = List.empty) extends Expression
 
-sealed trait Operand extends UnaryExpression
+sealed trait Operand
 sealed trait MoveTarget extends Operand
 final case class Identifier(ident: String) extends MoveTarget {
-  require(ident.matches("[a-zA-Z][a-zA-Z0-9]+"))
+  require(ident.matches("[a-zA-Z][a-zA-Z0-9]*"))
 }
-final case class IntLiteral(value: Double) extends Operand
+final case class IntLiteral(value: Int) extends Operand
 final case class StringLiteral(value: String) extends Operand
 final case class FloatLiteral(value: Double) extends Operand
 final case class BooleanLiteral(value: Boolean) extends Operand

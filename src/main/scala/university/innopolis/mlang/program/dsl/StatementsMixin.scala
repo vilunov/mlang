@@ -27,7 +27,7 @@ private[dsl] trait StatementsMixin {
     first
     builder.delve()
     second
-    builder.blockCond(Identifier(p.ident))
+    builder.blockCond(UnaryExpression(Identifier(p.ident)))
   }
 
   def loop(varName: String, from: Int, to: Int)(body: => Unit)

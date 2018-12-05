@@ -47,7 +47,11 @@ class BuildingContext {
   def blockLoop(varName: Identifier, from: Int, to: Int): Unit = {
     val body = blockStack.pop().toList
     add(ForStatement(
-      ForClause(Some(varName), IntLiteral(from), IntLiteral(to)),
+      ForClause(
+        Some(varName),
+        UnaryExpression(IntLiteral(from)),
+        UnaryExpression(IntLiteral(to))
+      ),
       StatementBlock(body),
     ))
   }
