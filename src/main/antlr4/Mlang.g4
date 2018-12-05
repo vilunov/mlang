@@ -8,7 +8,7 @@ program
     ;
 
 memoryBlock
-    : 'memory' WS? '{' (valDecl eos)* '}'
+    : 'memory' WS? '{' ( valDecl eos )* '}'
     ;
 
 programBlock
@@ -20,18 +20,63 @@ programBlock
 statement
     : command
     | assignStatement
+    | ifStatement
+    | forStatement
     ;
 
 statementBlock
-    :'{' (statement eos)* '}'
+    :'{' ( statement )* '}'
     ;
 
+// Used only in program block
 assignStatement
-    : IDENTIFIER '=' ( LITERAL | IDENTIFIER )
+    : expression '=' expression eos
     ;
 
+ifStatement
+    : 'if' expression statementBlock ('else' statementBlock)?
+    ;
+
+forStatement
+    : 'for' forClause statementBlock
+    ;
+
+forClause
+    : range
+    | IDENTIFIER 'in' range
+    ;
+
+range
+    : expression 'to' expression
+    ;
+
+// used only in memory block
 valDecl
-    : IDENTIFIER '=' LITERAL
+    : IDENTIFIER '=' expression
+    ;
+
+// Expressions
+
+expression
+    : unaryExpr
+    | expression BINARY_OP expression
+    | expression '.' IDENTIFIER
+    ;
+
+unaryExpr
+    : operand
+    | UNARY_OP unaryExpr
+    ;
+
+operand
+    : IDENTIFIER
+    | LITERAL
+    | '(' expression ')'
+    | typeExpression
+    ;
+
+typeExpression
+    : TYPE '(' parameterList ')'
     ;
 
 // Commands
@@ -41,12 +86,21 @@ command
     ;
 
 moveCommand
-    : 'move' IDENTIFIER eos
-    | 'move' IDENTIFIER parameterList
+    : 'move' moveTarget eos
+    | 'move' moveTarget ':' '{' parameterList '}'
+    ;
+
+moveTarget
+    : IDENTIFIER
+    | typeExpression
     ;
 
 parameterList
-    :
+    : parameterDecl ( ',' parameterDecl )*
+    ;
+
+parameterDecl
+    : IDENTIFIER ':' operand
     ;
 
 eos
@@ -66,25 +120,39 @@ IDENTIFIER
 LITERAL
     : INT_LIT
     | STRING_LIT
-    | INT_LIT
+    | FLOAT_LIT
+    | BOOLEAN_LIT
     ;
 
 STRING_LIT
-    : '\'' LETTER+ '\''
+    : '\'' (LETTER | DIGIT)* '\''
     ;
 
 INT_LIT
     : '0'
-    | NON_ZERO_DIGIT DIGIT*
+    | MINUS_SIGN? NON_ZERO_DIGIT DIGIT*
     ;
 
 FLOAT_LIT
-    : DIGIT* '.' DIGIT+
+    : MINUS_SIGN? DIGIT* '.' DIGIT+
+    ;
+
+BOOLEAN_LIT
+    : 'true'
+    | 'false'
+    ;
+
+TYPE
+    : 'Point'
     ;
 
 fragment DIGIT
     : '0'
     | NON_ZERO_DIGIT
+    ;
+
+fragment MINUS_SIGN
+    : '-'
     ;
 
 fragment NON_ZERO_DIGIT
@@ -104,12 +172,54 @@ fragment LOWER
     : 'a' .. 'z'
     ;
 
+// Operators
+
+BINARY_OP
+    : LOGIC_OP | REL_OP | ADD_OP | MUL_OP
+    ;
+
+fragment LOGIC_OP
+    : '||'
+    | '&&'
+    ;
+
+//rel_op     = "==" | "!=" | "<" | "<=" | ">" | ">=" .
+fragment REL_OP
+    : '=='
+    | '!='
+    | '<'
+    | '<='
+    | '>'
+    | '>='
+    ;
+
+//add_op     = "+" | "-"
+fragment ADD_OP
+    : '+'
+    | '-'
+    ;
+
+//mul_op     = "*" | "/" .
+fragment MUL_OP
+    : '*'
+    | '/'
+    ;
+
+UNARY_OP
+    : '!'
+    ;
+
 // Utility
 
 KEYWORDS
     : 'memory'
     | 'program'
-    | 'move'
+    | 'true'
+    | 'false'
+    | 'if'
+    | 'for'
+    | 'to'
+    | 'in'
     ;
 
 WS
