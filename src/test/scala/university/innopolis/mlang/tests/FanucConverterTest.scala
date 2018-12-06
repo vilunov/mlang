@@ -4,8 +4,7 @@ import org.scalatest.FlatSpec
 
 import university.innopolis.mlang.program.BuildingContext
 import university.innopolis.mlang.program.dsl._
-import university.innopolis.mlang.backends.converter._
-import university.innopolis.mlang.backends.fanuc.{JointInstruction, LinearInstruction, PointAssignment}
+import university.innopolis.mlang.backends.fanuc.FanucConverter
 
 
 class FanucConverterTest extends FlatSpec {

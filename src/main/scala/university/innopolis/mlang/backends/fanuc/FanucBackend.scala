@@ -8,30 +8,9 @@ import university.innopolis.mlang.program.ast.{Expression => ProgramExpression, 
 object FanucBackend extends Backend {
   override type Output = FanucProgram
 
-  private def validateConsts(definitions: Map[String, ProgramExpression]): Map[String, Position] =
-    definitions.mapValues {
-      case UnaryExpression(TypeOperand(Point, parameters), List()) =>
-        val params = parameters.mapValues {
-          case FloatLiteral(value) => value
-        }
-        Position(CartesianPoint(
-          1, 1,
-          CartesianCoordinates(
-            params("x"), params("y"), params("z"),
-            params("w"), params("p"), params("r"),
-          ),
-          config = "N U T, 0, 0, 1",
-        ))
-    }
-
-  private def validateInstructions(literalMap: Map[String, Any], program: Seq[Statement]): Instructions = {
-    Instructions()
-  }
-
   override def apply(p: Program): FanucProgram = {
-    val positions = validateConsts(p.memory)
-
-    val fanucInstructions = validateInstructions(Map.empty, p.statements)
+    val converter = new FanucConverter(p)
+    val (fanucInstructions, positions) = converter.convert()
 
     FanucProgram(
       "GENERATED",
@@ -43,10 +22,10 @@ object FanucBackend extends Backend {
         modified = LocalDateTime.now(),
         fileName = "UNDEFINED",
         version = 1,
-        lineCount = fanucInstructions.instructions.length,
+        lineCount = fanucInstructions.length,
         memorySize = 0,
       ),
-      fanucInstructions, Positions(positions.values.toSeq: _*),
+      Instructions(fanucInstructions: _*), Positions(positions: _*),
     )
   }
 }

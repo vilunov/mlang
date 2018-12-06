@@ -248,7 +248,7 @@ sealed trait Point {
 case class CartesianPoint(userFrame: Int,
                           userTool: Int,
                           coordinates: CartesianCoordinates,
-                          config: String)
+                          config: String = "N U T, 0, 0, 1")
   extends Point {
 
   override def toString: String =
