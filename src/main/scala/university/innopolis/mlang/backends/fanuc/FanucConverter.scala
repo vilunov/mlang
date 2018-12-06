@@ -58,7 +58,7 @@ private[fanuc] class FanucConverter(program: ast.Program) {
             // not handled pr[1, 1] = 150
             val targetName: String = moveTarget match {
               case ast.Identifier(ident) => ident
-            } //todo: I am not sure, need to discuss
+            } //todo: Никита привет, мне лень
             val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
             val provider: MoveRegister = assignment.right match {
               case ast.UnaryExpression(identifier: ast.Identifier, Nil) =>
@@ -100,7 +100,7 @@ private[fanuc] class FanucConverter(program: ast.Program) {
         if (unary.unaryOp.isEmpty) {
           convertOperand(unary.operand)
         } else {
-          ??? // Lots of binary expressions
+          ??? // Lots of binary expressions or what?
         }
     }
   }
@@ -110,7 +110,7 @@ private[fanuc] class FanucConverter(program: ast.Program) {
       case eOp: ast.ExpressionOperand => convertExpression(eOp.expression)
       case iLit: ast.IntLiteral => IntegerExpression(iLit.value)
       case fLit: ast.FloatLiteral => FloatExpression(fLit.value.toFloat) // from double to float
-      case _ => ??? // TODO: Register is not Expression. PR[i, k] = PR[g, j] + 15 not valid
+      case _ => ??? // TODO: val is R[i] ???
     }
   }
 
@@ -221,5 +221,4 @@ private[fanuc] class FanucConverter(program: ast.Program) {
 
   private[this] def convertPoints(points: List[Point]): List[Position] =
     points.map(Position(_))
-
 }

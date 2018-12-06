@@ -3,7 +3,10 @@ package university.innopolis.mlang.tests
 import org.scalatest.FlatSpec
 import university.innopolis.mlang.program.BuildingContext
 import university.innopolis.mlang.program.dsl._
-import university.innopolis.mlang.backends.fanuc.{FanucBackend, FanucConverter}
+import university.innopolis.mlang.backends.fanuc._
+import university.innopolis.mlang.program.ast._
+
+import scala.collection.mutable
 
 
 class FanucConverterTest extends FlatSpec {
@@ -15,9 +18,21 @@ class FanucConverterTest extends FlatSpec {
     "a" := "b"
     "a" := Cartesian(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
 
+
     val program = compile(emit())
 
-    val fanucProgram = FanucBackend(program)
+    val statements = mutable.MutableList[Statement]()
+    program.statements.foreach(statements.+=)
+
+    statements += AssignmentStatement(
+      DotExpression(
+        UnaryExpression(Identifier("val")),
+        "x"
+      ),
+      UnaryExpression(IntLiteral(100))
+    )
+
+    val fanucProgram = FanucBackend(Program(program.memory, statements.toList))
 
     assertResult(3)(fanucProgram.positions.positions.length)
 
@@ -26,7 +41,20 @@ class FanucConverterTest extends FlatSpec {
       "JointInstruction",
       "PointAssignment",
       "PointAssignment",
+      "IntegerAssignment"
     )
     assertResult(expected)(fanucProgram.instructions.instructions.map(_.getClass.getSimpleName))
+
+    val fourthInstruction: FanucInstruction = fanucProgram.instructions.instructions(4)
+    assertResult(true)(fourthInstruction.isInstanceOf[IntegerAssignment])
+
+    val integerAssignment = fourthInstruction.asInstanceOf[IntegerAssignment]
+    val value = integerAssignment.expression.asInstanceOf[IntegerExpression].value
+    assertResult(value)(100)
+
+    assertResult(true)(integerAssignment.register.isInstanceOf[PositionCoordinateRegister])
+    val posCoordReg: PositionCoordinateRegister = integerAssignment.register.asInstanceOf[PositionCoordinateRegister]
+    // X should be converted into 1
+    assertResult(1)(posCoordReg.j)
   }
 }
