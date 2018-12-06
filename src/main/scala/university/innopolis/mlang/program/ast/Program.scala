@@ -30,8 +30,6 @@ final case class TypeOperand(typeLiteral: TypeLiteral,
 final case class BinaryExpression(binOp: BinOp, left: Expression, right: Expression) extends Expression
 final case class DotExpression(expression: Expression, ident: String) extends Expression
 
-final case class StatementBlock(statements: List[Statement])
-
 sealed trait Statement
 sealed trait Command extends Statement
 final case class MoveCommand(moveTarget: MoveTarget,
@@ -39,12 +37,12 @@ final case class MoveCommand(moveTarget: MoveTarget,
 
 final case class AssignmentStatement(left: Expression, right: Expression) extends Statement
 final case class IfStatement(condition: Expression,
-                             left: StatementBlock,
-                             right: Option[StatementBlock]) extends Statement
+                             left: List[Statement],
+                             right: Option[List[Statement]]) extends Statement
 
 final case class Range(left: Expression, right: Expression)
 final case class ForClause(identifier: Option[Identifier], left: Expression, right: Expression) extends Statement
-final case class ForStatement(clause: ForClause, statementBlock: StatementBlock) extends Statement
+final case class ForStatement(clause: ForClause, statementBlock: List[Statement]) extends Statement
 
 
 

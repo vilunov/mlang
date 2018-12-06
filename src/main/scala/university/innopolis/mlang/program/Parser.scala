@@ -35,7 +35,7 @@ object Parser {
     val program = parser.program()
 
     val memory: Map[String, Expression] = this.memory(program.memoryBlock())
-    val instructions: List[Statement] =
+    val instructions: List[Statement] = statements(program.programBlock().statementBlock())
 
     Program(memory, instructions)
   }
@@ -61,46 +61,44 @@ object Parser {
     MoveCommand(target, parameters)
   }
 
-  def statements(input: StatementBlockContext): StatementBlock = StatementBlock(
-    input.statement().asScala
-      .map {
-        case i if i.command() != null =>
-          command(i.command())
-        case i if i.assignStatement() != null =>
-          val assignExpressions = i.assignStatement().expression()
-          AssignmentStatement(expression(assignExpressions(0)), expression(assignExpressions(0)))
-        case i if i.ifStatement() != null =>
-          val ifStatement = i.ifStatement()
-          var elseStatements: Option[StatementBlock] = None
+  def statements(input: StatementBlockContext): List[Statement] = input.statement().asScala
+    .map {
+      case i if i.command() != null =>
+        command(i.command())
+      case i if i.assignStatement() != null =>
+        val assignExpressions = i.assignStatement().expression()
+        AssignmentStatement(expression(assignExpressions(0)), expression(assignExpressions(0)))
+      case i if i.ifStatement() != null =>
+        val ifStatement = i.ifStatement()
+        var elseStatements: Option[List[Statement]] = None
 
-          if (ifStatement.statementBlock().asScala.size > 1) {
-            elseStatements = Some(statements(ifStatement.statementBlock(1)))
-          }
+        if (ifStatement.statementBlock().asScala.size > 1) {
+          elseStatements = Some(statements(ifStatement.statementBlock(1)))
+        }
 
-          IfStatement(
-            expression(ifStatement.expression()),
-            statements(ifStatement.statementBlock(0)),
-            elseStatements
-          )
-        case i if i.forStatement() != null =>
-          val forStatment = i.forStatement()
+        IfStatement(
+          expression(ifStatement.expression()),
+          statements(ifStatement.statementBlock(0)),
+          elseStatements
+        )
+      case i if i.forStatement() != null =>
+        val forStatment = i.forStatement()
 
-          val forClause = forStatment.forClause()
-          val forClauseExpressions = forClause.range().expression()
-          var clauseID: Option[Identifier] = None
-          if (forClause.IDENTIFIER() != null) {
-            clauseID = Some(Identifier(forClause.IDENTIFIER().getText))
-          }
-          val clause = ForClause(
-            clauseID,
-            expression(forClauseExpressions(0)),
-            expression(forClauseExpressions(1))
-          )
+        val forClause = forStatment.forClause()
+        val forClauseExpressions = forClause.range().expression()
+        var clauseID: Option[Identifier] = None
+        if (forClause.IDENTIFIER() != null) {
+          clauseID = Some(Identifier(forClause.IDENTIFIER().getText))
+        }
+        val clause = ForClause(
+          clauseID,
+          expression(forClauseExpressions(0)),
+          expression(forClauseExpressions(1))
+        )
 
-          ForStatement(clause, statements(forStatment.statementBlock()))
-      }
-      .toList
-  )
+        ForStatement(clause, statements(forStatment.statementBlock()))
+    }
+    .toList
 
   def parameters(input: ParameterListContext): Map[String, Operand] = input.parameterDecl().asScala
     .map { i => i.IDENTIFIER().getText -> operand(i.operand()) }
