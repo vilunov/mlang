@@ -51,9 +51,9 @@ final case class ExpressionOperand(expression: Expression) extends Operand {
 final case class TypeOperand(typeLiteral: TypeLiteral,
                              parameters: Map[String, Operand] = Map.empty) extends MoveTarget {
   override def toString: String = {
-    val parameterList = parameters.map {
+    val parameterList = parameters.toList.sortBy(_._1).map {
       case (ident, operand) => s"$ident: $operand"
-    }.mkString(",")
+    }.mkString(", ")
     s"$typeLiteral($parameterList)"
   }
 }
@@ -70,17 +70,17 @@ sealed trait Command extends Statement
 final case class MoveCommand(moveTarget: MoveTarget,
                              parameters: Map[String, Operand] = Map.empty) extends Command {
   override def toString: String = {
-    val params = parameters.map {
+    val params = parameters.toList.sortBy(_._1).map {
       case (ident, op) => s"$ident: $op"
-    }.toList
+    }
 
-    val parameterList = if (params.nonEmpty) s": { ${params.mkString(", ")} }\n" else ""
-    s"move $moveTarget$parameterList"
+    val parameterList = if (params.nonEmpty) s": { ${params.mkString(", ")} }" else ""
+    s"move $moveTarget$parameterList\n"
   }
 }
 
 final case class AssignmentStatement(left: Expression, right: Expression) extends Statement {
-  override def toString: String = s"$left = $right"
+  override def toString: String = s"$left = $right\n"
 }
 final case class IfStatement(condition: Expression,
                              left: List[Statement],
@@ -100,7 +100,7 @@ final case class ForClause(identifier: Option[Identifier], left: Expression, rig
 }
 final case class ForStatement(clause: ForClause, statementBlock: List[Statement]) extends Statement {
   override def toString: String = {
-    val statements = s"{\n${statementBlock.mkString(",")}}\n"
+    val statements = s"{\n${statementBlock.mkString("\n")}}\n"
     s"for $clause $statements"
   }
 }
