@@ -66,7 +66,7 @@ object Parser {
       case i if i.command() != null =>
         command(i.command())
       case i if i.assignStatement() != null =>
-        val assignExpressions = i.assignStatement().expression()
+        val assignExpressions = i.assignStatement().expression().asScala
         AssignmentStatement(expression(assignExpressions(0)), expression(assignExpressions(0)))
       case i if i.ifStatement() != null =>
         val ifStatement = i.ifStatement()
@@ -85,7 +85,7 @@ object Parser {
         val forStatment = i.forStatement()
 
         val forClause = forStatment.forClause()
-        val forClauseExpressions = forClause.range().expression()
+        val forClauseExpressions = forClause.range().expression().asScala
         var clauseID: Option[Identifier] = None
         if (forClause.IDENTIFIER() != null) {
           clauseID = Some(Identifier(forClause.IDENTIFIER().getText))
