@@ -1,8 +1,6 @@
 package university.innopolis.mlang.backends.converter
 
 import university.innopolis.mlang.backends.fanuc._
-import university.innopolis.mlang.parser.MlangParser._
-import university.innopolis.mlang.program.Program._
 import university.innopolis.mlang.program._
 
 import scala.collection.mutable
@@ -40,7 +38,7 @@ class FanucConverter(program: Program) {
           require(register != null) // todo: may be it is wrong tactic
 
           if (params.isEmpty) { // default movement
-            LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
+            instruction = LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
           } else {
             val trajectory: StringLiteral = params("trajectory").asInstanceOf[StringLiteral]
             val speed: Int = params("speed").asInstanceOf[IntLiteral].value
@@ -49,34 +47,38 @@ class FanucConverter(program: Program) {
 
             //todo: how to differentiate OtherMMSec, etc.???
 
+            // todo: sry, I know code below can be done better but I dont know how
             trajectory.value match {
-              case "linear" => LinearInstruction(register, speed, OtherMMSec, smoothnessType)
-              case "joint" => JointInstruction(register, speed, JointPercent, smoothnessType)
-              case "arc" =>  ArcInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
-              case "" => CircularInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              case "linear" => instruction = LinearInstruction(register, speed, OtherMMSec, smoothnessType)
+              case "joint" =>  instruction = JointInstruction(register, speed, JointPercent, smoothnessType)
+              case "arc" =>    instruction = ArcInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              case "circular" => instruction = CircularInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
               case _ => ???
             }
           }
         case assignment: AssignmentStatement =>
-          if (!assignment.left.isInstanceOf[MoveTarget]) {
-            //todo: I dont know what to do
-            throw new RuntimeException("We all gonna die")
+
+          assignment.left match {
+            case moveTarget: MoveTarget =>
+              // Handles register = register
+              // not handled pr[1, 1] = 150
+              val targetName: String = assignment.left.asInstanceOf[Identifier].ident //todo: I am not sure, need to discuss
+              val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
+              var provider: MoveRegister = null
+
+              assignment.right match {
+                case identifier: Identifier =>
+                  provider = PositionRegister(getPRIndex(identifier.ident))
+                case typeOperand: TypeOperand =>
+                  provider = handleTypeOperand(typeOperand)
+                case _ => ???
+              }
+
+              instruction = PointAssignment(targetRegister, provider)
+            case dataRegister: ExpressionOperand => //todo: here I wished to convert R[1] = R[2] + ..., but not sure what is it
+              ???
           }
-
-          // not handled pr[1, 1] = 150
-          val targetName: String = assignment.left.asInstanceOf[Identifier].ident //todo: I am not sure, need to discuss
-          val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
-          var provider: MoveRegister = null
-
-          assignment.right match {
-            case identifier: Identifier =>
-              provider = PositionRegister(getPRIndex(identifier.ident))
-            case typeOperand: TypeOperand =>
-              provider = handleTypeOperand(typeOperand)
-            case _ => ???
-          }
-
-          PointAssignment(targetRegister, provider)
+        case _ => ???
       }
 
       fanucInstructions += instruction
@@ -94,8 +96,8 @@ class FanucConverter(program: Program) {
     val y = params("y").asInstanceOf[FloatLiteral].value
     val z = params("z").asInstanceOf[FloatLiteral].value
     val w = params("w").asInstanceOf[FloatLiteral].value
-    val r = params("r").asInstanceOf[FloatLiteral].value
     val p = params("p").asInstanceOf[FloatLiteral].value
+    val r = params("r").asInstanceOf[FloatLiteral].value
 
     val cartesianCoordinates: CartesianCoordinates = CartesianCoordinates(x, y, z, w, p, r)
     val cartesianPoint: CartesianPoint = CartesianPoint(uTool, uFrame, cartesianCoordinates, null) //todo: what is expected to use as config?
