@@ -39,8 +39,8 @@ class BuildingContext {
     val blockIf = blockStack.pop().toList
     add(IfStatement(
       condition,
-      StatementBlock(blockIf),
-      Option(blockIf).filter(_.nonEmpty).map(StatementBlock),
+      blockIf,
+      Option(blockElse).filter(_.nonEmpty),
     ))
   }
 
@@ -52,8 +52,7 @@ class BuildingContext {
         UnaryExpression(IntLiteral(from)),
         UnaryExpression(IntLiteral(to))
       ),
-      StatementBlock(body),
+      body,
     ))
   }
-
 }
