@@ -4,14 +4,13 @@ import university.innopolis.mlang.program.ast._
 
 private[dsl] trait StatementsMixin {
 
-  def move(x: Double, y: Double, z: Double, w: Double, p: Double, r: Double,
+  def move(point: MoveTargetExpression,
            velocity: Velocity = Undefined, trajectory: Trajectory = Undefined,
            smoothness: Smoothness = Undefined)
           (implicit builder: BuildingContext): Unit = {
 
-    val params = Map("x" -> x, "y" -> y, "z" -> z, "w" -> w, "r" -> r, "p" -> p).mapValues(FloatLiteral)
     builder.add(MoveCommand(
-      TypeOperand(Point, params),
+      point.typeOperand,
       Map(
         "speed" -> velocity.toVelocityProperty,
         "smoothness" -> smoothness.toSmoothnessProperty,

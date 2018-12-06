@@ -24,12 +24,27 @@ package object dsl extends TypesMixin with StatementsMixin {
       ))
   }
 
+  trait MoveTargetExpression {
+    def typeOperand: MoveTarget
+  }
+
   case class Cartesian(x: Double, y: Double, z: Double,
-                       w: Double, p: Double, r: Double) {
+                       w: Double, p: Double, r: Double)
+    extends MoveTargetExpression {
+
     lazy val typeOperand: MoveTarget = TypeOperand(
       Point,
       Map("x" -> 1.0, "y" -> 1.0, "z" -> 1.0, "w" -> 1.0, "r" -> 1.0, "p" -> 1.0)
         .mapValues(FloatLiteral),
+    )
+  }
+
+  case class Joints(js: Double*)
+    extends MoveTargetExpression {
+
+    lazy val typeOperand: MoveTarget = TypeOperand(
+      Point,
+      js.zipWithIndex.map { case (j, idx) => s"j${idx + 1}" -> FloatLiteral(j) }.toMap
     )
   }
 

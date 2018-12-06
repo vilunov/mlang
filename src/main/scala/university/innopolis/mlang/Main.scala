@@ -7,16 +7,9 @@ import university.innopolis.mlang.io.ReadWrite
 object Main extends App {
   implicit val builder: BuildingContext = new BuildingContext
 
-  move(x = 1.0, y = 1.0, z = 1.0, w = 1.0, p = 1.0, r = 1.0)
-  move(x = 2.0, y = 2.0, z = 8.0, w = 1.0, p = 1.0, r = 1.0, smoothness = Cnt(10),
-    trajectory = Circular(Cartesian(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))
-  move(x = 1.0, y = 1.0, z = 1.0, w = 1.0, p = 1.0, r = 1.0, smoothness = Fine, velocity = 3)
-  /*
-  cond("a") {} {}
-  loop(varName = "i", from = 1, to = 100) {
-    move("a")
-  }
-  */
+  move(Joints(35, 19, 20, 35, 17, 60), velocity = 100, smoothness = Fine, trajectory = Joint)
+  move(Joints(-10, -30, 15, -15, 60, 12), velocity = 100, smoothness = Fine, trajectory = Joint)
+  move(Joints(0, 0, 0, 0, 0, 90), velocity = 100, smoothness = Fine, trajectory = Joint)
 
-  ReadWrite.write(FanucBackend.translate(), "output.ls")
+  ReadWrite.write(FanucBackend.translate(), "generated.ls")
 }

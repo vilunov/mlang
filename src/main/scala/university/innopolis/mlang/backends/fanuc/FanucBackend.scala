@@ -20,7 +20,7 @@ object FanucBackend extends Backend {
         progSize = 0,
         create = LocalDateTime.now(),
         modified = LocalDateTime.now(),
-        fileName = "UNDEFINED",
+        fileName = "",
         version = 1,
         lineCount = fanucInstructions.length,
         memorySize = 0,

@@ -14,7 +14,7 @@ private[fanuc] class FanucConverter(program: Program) {
   var pointRegistersCount: Int = 0
 
   val fanucInstructions: mutable.MutableList[FanucInstruction] = mutable.MutableList[FanucInstruction]()
-  val points: mutable.MutableList[CartesianPoint] = mutable.MutableList[CartesianPoint]()
+  val points: mutable.MutableList[Point] = mutable.MutableList[Point]()
 
   def convert(): (List[FanucInstruction], List[Position]) = {
     val statements = program.statements
@@ -80,21 +80,27 @@ private[fanuc] class FanucConverter(program: Program) {
     (fanucInstructions.toList, positions)
   }
 
-  private[this] def buildCartesianPoint(params: Map[String, Operand], uTool: Int = 0, uFrame: Int = 0): CartesianPoint = {
-    // Expected that params contain x, y, z, w, p, r
-    // todo: I am sure there is a better solution
-
-    val x = params("x").asInstanceOf[FloatLiteral].value
-    val y = params("y").asInstanceOf[FloatLiteral].value
-    val z = params("z").asInstanceOf[FloatLiteral].value
-    val w = params("w").asInstanceOf[FloatLiteral].value
-    val p = params("p").asInstanceOf[FloatLiteral].value
-    val r = params("r").asInstanceOf[FloatLiteral].value
-
-    val cartesianCoordinates: CartesianCoordinates = CartesianCoordinates(x, y, z, w, p, r)
-    val cartesianPoint: CartesianPoint = CartesianPoint(uTool, uFrame, cartesianCoordinates)
-
-    cartesianPoint
+  private[this] def buildPoint(params: Map[String, Operand], uTool: Int = 1, uFrame: Int = 1): Point = {
+    {
+      List(
+        params.get("x"), params.get("y"), params.get("z"),
+        params.get("w"), params.get("p"), params.get("r")
+      ).collect { case Some(FloatLiteral(i)) => i } match {
+        case x :: y :: z :: w :: p :: r :: Nil =>
+          val coords = CartesianCoordinates(x, y, z, w, p, r)
+          Some(CartesianPoint(uFrame, uTool, coords))
+        case _ => None
+      }
+    }.orElse {
+      List(
+        params.get("j1"), params.get("j2"), params.get("j3"),
+        params.get("j4"), params.get("j5"), params.get("j6")
+      ).collect { case Some(FloatLiteral(i)) => i } match {
+        case joints =>
+          val coords = JointCoordinates(joints)
+          Some(JointPoint(uFrame, uTool, coords))
+      }
+    }.get
   }
 
   private[this] def handleMoveTarget(target: MoveTarget): MoveRegister = target match {
@@ -110,9 +116,7 @@ private[fanuc] class FanucConverter(program: Program) {
 
     val params: Map[String, Operand] = typeOperand.parameters
 
-    val cartesianPoint: CartesianPoint = buildCartesianPoint(params) //TODO: IT IS NOT CORRECT
-
-    points += cartesianPoint
+    points += buildPoint(params)
     PointRegister(points.length) // не добавлять -1, отсчет начинается с единицы
   }
 
@@ -136,7 +140,7 @@ private[fanuc] class FanucConverter(program: Program) {
     positionRegistersCount
   }
 
-  private[this] def convertPoints(points: List[CartesianPoint]): List[Position] =
+  private[this] def convertPoints(points: List[Point]): List[Position] =
     points.map(Position(_))
 
 }
