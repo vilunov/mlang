@@ -7,12 +7,23 @@ private[dsl] trait TrajectoryMixin {
     def toTrajectoryProperty: Option[Operand]
   }
 
-  case object Fine extends Trajectory {
-    override val toTrajectoryProperty = Some(StringLiteral("FINE"))
+  case object Joint extends Trajectory {
+    override def toTrajectoryProperty: Option[Operand] = Some(StringLiteral("JOINT"))
+  }
+}
+
+private[dsl] trait SmoothnessMixing {
+  sealed trait Smoothness {
+    def toSmoothnessProperty: Option[Operand]
   }
 
-  final case class Cnt(i: Int) extends Trajectory {
-    override val toTrajectoryProperty = Some(StringLiteral(s"CNT$i"))
+  case object Fine extends Smoothness {
+    override val toSmoothnessProperty = Some(IntLiteral(0))
+  }
+
+  final case class Cnt(i: Int) extends Smoothness {
+    require(i >= 0)
+    override val toSmoothnessProperty = Some(IntLiteral(i))
   }
 }
 
@@ -26,9 +37,10 @@ private[dsl] trait VelocityMixin {
   }
 }
 
-private[dsl] trait TypesMixin extends TrajectoryMixin with VelocityMixin {
-  case object Undefined extends Trajectory with Velocity {
+private[dsl] trait TypesMixin extends TrajectoryMixin with VelocityMixin with SmoothnessMixing {
+  case object Undefined extends Trajectory with Velocity with Smoothness {
     override val toTrajectoryProperty: Option[Operand] = None
     override val toVelocityProperty: Option[Operand] = None
+    override val toSmoothnessProperty: Option[Operand] = None
   }
 }

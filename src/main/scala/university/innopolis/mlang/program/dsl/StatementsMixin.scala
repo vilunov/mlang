@@ -5,7 +5,8 @@ import university.innopolis.mlang.program.ast._
 private[dsl] trait StatementsMixin {
 
   def move(x: Double, y: Double, z: Double, w: Double, p: Double, r: Double,
-           velocity: Velocity = Undefined, trajectory: Trajectory = Undefined)
+           velocity: Velocity = Undefined, trajectory: Trajectory = Undefined,
+           smoothness: Smoothness = Undefined)
           (implicit builder: BuildingContext): Unit = {
 
     val params = Map("x" -> x, "y" -> y, "z" -> z, "w" -> w, "r" -> r, "p" -> p).mapValues(FloatLiteral)
@@ -14,6 +15,7 @@ private[dsl] trait StatementsMixin {
       Map(
         "speed" -> velocity.toVelocityProperty,
         "trajectory" -> trajectory.toTrajectoryProperty,
+        "smoothness" -> smoothness.toSmoothnessProperty,
       ).collect { case (a, Some(b)) => (a, b) },
     ))
   }

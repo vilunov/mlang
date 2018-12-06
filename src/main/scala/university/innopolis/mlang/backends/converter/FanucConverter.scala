@@ -1,7 +1,7 @@
 package university.innopolis.mlang.backends.converter
 
 import university.innopolis.mlang.backends.fanuc._
-import university.innopolis.mlang.program._
+import university.innopolis.mlang.program.ast._
 
 import scala.collection.mutable
 
@@ -21,7 +21,7 @@ class FanucConverter(program: Program) {
     val statements = program.statements
     val memory = program.memory
 
-    statements.foreach(statement => {
+    statements.foreach { statement =>
       var instruction: FanucInstruction = null
 
       statement match {
@@ -51,40 +51,44 @@ class FanucConverter(program: Program) {
             //todo: how to differentiate OtherMMSec, etc.???
 
             // todo: sry, I know code below can be done better but I dont know how
-            trajectory.value match {
-              case "linear" => instruction = LinearInstruction(register, speed, OtherMMSec, smoothnessType)
-              case "joint" =>  instruction = JointInstruction(register, speed, JointPercent, smoothnessType)
-              case "arc" =>    instruction = ArcInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
-              case "circular" => instruction = CircularInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+            trajectory.value.toLowerCase() match {
+              case "linear" =>
+                instruction = LinearInstruction(register, speed, OtherMMSec, smoothnessType)
+              case "joint" =>
+                instruction = JointInstruction(register, speed, JointPercent, smoothnessType)
+              case "arc" =>
+                instruction = ArcInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              case "circular" =>
+                instruction = CircularInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
               case _ => ???
             }
           }
         case assignment: AssignmentStatement =>
           assignment.left match {
-            case moveTarget: MoveTarget =>
+            case UnaryExpression(moveTarget: MoveTarget, Nil) =>
               // Handles register = register
               // not handled pr[1, 1] = 150
-              val targetName: String = assignment.left.asInstanceOf[Identifier].ident //todo: I am not sure, need to discuss
+              val targetName: String = moveTarget match {
+                case Identifier(ident) => ident
+              } //todo: I am not sure, need to discuss
               val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
-              var provider: MoveRegister = null
-
-              assignment.right match {
-                case identifier: Identifier =>
-                  provider = PositionRegister(getPRIndex(identifier.ident))
-                case typeOperand: TypeOperand =>
-                  provider = handleTypeOperand(typeOperand)
+              val provider: MoveRegister = assignment.right match {
+                case UnaryExpression(identifier: Identifier, Nil) =>
+                  PositionRegister(getPRIndex(identifier.ident))
+                case UnaryExpression(typeOperand: TypeOperand, Nil) =>
+                  handleTypeOperand(typeOperand)
                 case _ => ???
               }
 
               instruction = PointAssignment(targetRegister, provider)
-            case dataRegister: ExpressionOperand => //todo: here I wished to convert R[1] = R[2] + ..., but not sure what is it
+            case UnaryExpression(dataRegister: ExpressionOperand, Nil) => //todo: here I wished to convert R[1] = R[2] + ..., but not sure what is it
               ???
           }
         case _ => ???
       }
 
       fanucInstructions += instruction
-    })
+    }
 
 
     val positions: List[Position] = convertPoints(points.toList)
@@ -135,15 +139,16 @@ class FanucConverter(program: Program) {
   }
 
   private[this] def getPointIndex(): Int = {
-    { pointRegistersCount += 1; pointRegistersCount }
+    pointRegistersCount += 1
+    pointRegistersCount
   }
 
   private[this] def getFreePRIndex: Int = {
-    { positionRegistersCount += 1; positionRegistersCount }
+    positionRegistersCount += 1
+    positionRegistersCount
   }
 
-  private[this] def convertPoints(points: List[CartesianPoint]): List[Position] = {
+  private[this] def convertPoints(points: List[CartesianPoint]): List[Position] =
     points.map(Position(_))
-  }
 
 }
