@@ -1,11 +1,9 @@
 package university.innopolis.mlang.backends.fanuc
 
+import scala.collection.mutable
 import university.innopolis.mlang.program.ast
 
-import scala.collection.mutable
-import university.innopolis.mlang.program.ast._
-
-private[fanuc] class FanucConverter(program: Program) {
+private[fanuc] class FanucConverter(program: ast.Program) {
   val positionRegisters: mutable.Map[String, Int] = mutable.Map[String, Int]()
   val defaultSpeed: Int = 100
   val defaultSmoothness: Int = 0
@@ -24,18 +22,18 @@ private[fanuc] class FanucConverter(program: Program) {
     unloadPositions(memory)
 
     statements.foreach {
-      case move: MoveCommand =>
-        val target: MoveTarget = move.moveTarget
-        val params: Map[String, Operand] = move.parameters
+      case move: ast.MoveCommand =>
+        val target: ast.MoveTarget = move.moveTarget
+        val params: Map[String, ast.Operand] = move.parameters
         val register: MoveRegister = handleMoveTarget(target)
 
         if (params.isEmpty) { // default movement
           storeInstruction(LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine))
         } else {
-          val trajectory: StringLiteral = params.getOrElse("trajectory", StringLiteral(defaultTrajectory)).asInstanceOf[StringLiteral]
-          val speed: Int = params.getOrElse("speed", IntLiteral(defaultSpeed)).asInstanceOf[IntLiteral].value
-          val smoothness: Int = params.getOrElse("smoothness", IntLiteral(defaultSmoothness)).asInstanceOf[IntLiteral].value
-          val secondary = params.get("secondary").map(_.asInstanceOf[MoveTarget]).map(handleMoveTarget)
+          val trajectory: ast.StringLiteral = params.getOrElse("trajectory", ast.StringLiteral(defaultTrajectory)).asInstanceOf[ast.StringLiteral]
+          val speed: Int = params.getOrElse("speed", ast.IntLiteral(defaultSpeed)).asInstanceOf[ast.IntLiteral].value
+          val smoothness: Int = params.getOrElse("smoothness", ast.IntLiteral(defaultSmoothness)).asInstanceOf[ast.IntLiteral].value
+          val secondary = params.get("secondary").map(_.asInstanceOf[ast.MoveTarget]).map(handleMoveTarget)
           val smoothnessType: SmoothnessType = convertSmoothness(smoothness)
 
           //todo: how to differentiate OtherMMSec, etc.???
@@ -53,27 +51,37 @@ private[fanuc] class FanucConverter(program: Program) {
             case _ => ???
           })
         }
-      case assignment: AssignmentStatement =>
+      case assignment: ast.AssignmentStatement =>
         assignment.left match {
-          case UnaryExpression(moveTarget: MoveTarget, Nil) =>
+          case ast.UnaryExpression(moveTarget: ast.MoveTarget, Nil) =>
             // Handles register = register
             // not handled pr[1, 1] = 150
             val targetName: String = moveTarget match {
-              case Identifier(ident) => ident
+              case ast.Identifier(ident) => ident
             } //todo: I am not sure, need to discuss
             val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
             val provider: MoveRegister = assignment.right match {
-              case UnaryExpression(identifier: Identifier, Nil) =>
+              case ast.UnaryExpression(identifier: ast.Identifier, Nil) =>
                 PositionRegister(getPRIndex(identifier.ident))
-              case UnaryExpression(typeOperand: TypeOperand, Nil) =>
+              case ast.UnaryExpression(typeOperand: ast.TypeOperand, Nil) =>
                 handleTypeOperand(typeOperand)
               case _ => ???
             }
 
             storeInstruction(PointAssignment(targetRegister, provider))
-          case UnaryExpression(dataRegister: ExpressionOperand, Nil) =>
+          case ast.UnaryExpression(dataRegister: ast.ExpressionOperand, Nil) =>
             //todo: here I wished to convert R[1] = R[2] + ..., but not sure what is it
             ???
+          case ast.DotExpression(exp: ast.UnaryExpression, varName: String) =>
+            exp.operand match {
+              case typeOperand: ast.TypeOperand =>
+                throw new RuntimeException("It should not be possible") // Point(4,2,1...).x=10 ???
+              case identifier: ast.Identifier =>
+                val pr: PositionCoordinateRegister =
+                  PositionCoordinateRegister(getPRIndex(identifier.ident), axisToIndex(varName))
+                val value: Expression = convertExpression(assignment.right)
+                storeInstruction(IntegerAssignment(pr, expression = value))
+            }
         }
       case _ => ???
     }
@@ -83,11 +91,31 @@ private[fanuc] class FanucConverter(program: Program) {
     (fanucInstructions.toList, positions)
   }
 
+  private[this] def convertExpression(expr: ast.Expression): Expression = {
+    expr match {
+      case binExpr: ast.BinaryExpression =>
+        val op: Operator = convertOperator(binExpr.binOp)
+        BinaryExpression(op, convertExpression(binExpr.left), convertExpression(binExpr.right))
+      case unary: ast.UnaryExpression =>
+
+    }
+  }
+
+  private[this] def convertOperator(operator: ast.BinOp): Operator = {
+    operator match {
+      case ast.Addition => Plus
+      case ast.Minus => Minus
+      case ast.Multiplication => Multiplication
+      case ast.Division => Division
+      case _ => ??? //todo: not implemented DIV & MOD on MLANG
+    }
+  }
+
   private[this] def unloadPositions(memory: Map[String, ast.Expression]) = {
     memory.foreach[Unit]{case (key:String, value: ast.Expression) => {
-      val operand = value.asInstanceOf[UnaryExpression].operand
+      val operand = value.asInstanceOf[ast.UnaryExpression].operand
       operand match {
-        case typeOperand: TypeOperand =>
+        case typeOperand: ast.TypeOperand =>
           val point: PointRegister = handleTypeOperand(typeOperand)
           val pr: PositionRegister = PositionRegister(getPRIndex(key))
           storeInstruction(PointAssignment(pr, point))
@@ -96,16 +124,34 @@ private[fanuc] class FanucConverter(program: Program) {
     }}
   }
 
+  private[this] def axisToIndex(varName: String): Int = {
+    varName match {
+      case "x" => 1
+      case "y" => 2
+      case "z" => 3
+      case "w" => 4
+      case "p" => 5
+      case "r" => 6
+      case "j1" => 1
+      case "j2" => 2
+      case "j3" => 3
+      case "j4" => 4
+      case "j5" => 5
+      case "j6" => 6
+    }
+  }
+
+
   private[this] def storeInstruction(instruction: FanucInstruction): Unit = {
     fanucInstructions += instruction
   }
 
-  private[this] def buildPoint(params: Map[String, Operand], uTool: Int = 1, uFrame: Int = 1): Point = {
+  private[this] def buildPoint(params: Map[String, ast.Operand], uTool: Int = 1, uFrame: Int = 1): Point = {
     {
       List(
         params.get("x"), params.get("y"), params.get("z"),
         params.get("w"), params.get("p"), params.get("r")
-      ).collect { case Some(FloatLiteral(i)) => i } match {
+      ).collect { case Some(ast.FloatLiteral(i)) => i } match {
         case x :: y :: z :: w :: p :: r :: Nil =>
           val coords = CartesianCoordinates(x, y, z, w, p, r)
           Some(CartesianPoint(uFrame, uTool, coords))
@@ -115,7 +161,7 @@ private[fanuc] class FanucConverter(program: Program) {
       List(
         params.get("j1"), params.get("j2"), params.get("j3"),
         params.get("j4"), params.get("j5"), params.get("j6")
-      ).collect { case Some(FloatLiteral(i)) => i } match {
+      ).collect { case Some(ast.FloatLiteral(i)) => i } match {
         case joints =>
           val coords = JointCoordinates(joints)
           Some(JointPoint(uFrame, uTool, coords))
@@ -123,18 +169,18 @@ private[fanuc] class FanucConverter(program: Program) {
     }.get
   }
 
-  private[this] def handleMoveTarget(target: MoveTarget): MoveRegister = target match {
-    case identifier: Identifier =>
+  private[this] def handleMoveTarget(target: ast.MoveTarget): MoveRegister = target match {
+    case identifier: ast.Identifier =>
       PositionRegister(getPRIndex(identifier.ident))
-    case typeOperand: TypeOperand =>
+    case typeOperand: ast.TypeOperand =>
       handleTypeOperand(typeOperand)
   }
 
   // сохраняет point-литерал в /POS блок
-  private[this] def handleTypeOperand(typeOperand: TypeOperand): PointRegister = {
-    require(typeOperand.typeLiteral == Point)
+  private[this] def handleTypeOperand(typeOperand: ast.TypeOperand): PointRegister = {
+    require(typeOperand.typeLiteral == ast.Point)
 
-    val params: Map[String, Operand] = typeOperand.parameters
+    val params: Map[String, ast.Operand] = typeOperand.parameters
 
     points += buildPoint(params)
     PointRegister(points.length) // не добавлять -1, отсчет начинается с единицы
