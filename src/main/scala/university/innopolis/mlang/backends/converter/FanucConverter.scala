@@ -13,42 +13,33 @@ class FanucConverter(program: Program) {
   var positionRegistersCount: Int = 0
   var pointRegistersCount: Int = 0
 
+  val fanucInstructions: mutable.MutableList[FanucInstruction] = mutable.MutableList[FanucInstruction]()
+  val points: mutable.MutableList[CartesianPoint] = mutable.MutableList[CartesianPoint]()
+
   def convert(): (List[FanucInstruction], List[Position]) = {
     val statements = program.statements
     val memory = program.memory
-
-    val fanucInstructions: mutable.MutableList[FanucInstruction] = mutable.MutableList[FanucInstruction]()
-    val points: mutable.MutableList[CartesianPoint] = mutable.MutableList[CartesianPoint]()
 
     statements.foreach(statement => {
       var instruction: FanucInstruction = null
 
       statement match {
-        case _move if statement.isInstanceOf[MoveCommand] => // MoveCommand
-          val move = statement.asInstanceOf[MoveCommand]
+        case move: MoveCommand => // MoveCommand
           val target: MoveTarget = move.moveTarget
           val params: Map[String, Operand] = move.parameters
 
           var register: MoveRegister = null
 
           target match {
-            case _identifier if target.isInstanceOf[Identifier] =>
-              val identifier: String = target.asInstanceOf[Identifier].ident
-              register = PositionRegister(getPRIndex(identifier))
-            case _typeOperand if target.isInstanceOf[TypeOperand] =>
-              val typeOperand: TypeOperand = target.asInstanceOf[TypeOperand]
-              val point: Point = typeOperand.typeLiteral.asInstanceOf[Point]
-              val params: Map[String, Operand] = typeOperand.parameters
-
-              val cartesianPoint: CartesianPoint = buildCartesianPoint(params, uFrame = 0, uTool = 0) //TODO: IT IS NOT CORRECT
-              points += cartesianPoint
-
-              register = PointRegister(getPointIndex())
+            case identifier: Identifier =>
+              register = PositionRegister(getPRIndex(identifier.ident))
+            case typeOperand: TypeOperand =>
+              register = handleTypeOperand(typeOperand)
           }
 
           require(register != null) // todo: may be it is wrong tactic
 
-          if (params.isEmpty) {
+          if (params.isEmpty) { // default movement
             LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
           } else {
             val trajectory: StringLiteral = params("trajectory").asInstanceOf[StringLiteral]
@@ -66,14 +57,33 @@ class FanucConverter(program: Program) {
               case _ => ???
             }
           }
-        case _assignment if statement.isInstanceOf[AssignmentStatement] =>
-          val assignment = statement.asInstanceOf[AssignmentStatement]
+        case assignment: AssignmentStatement =>
+          if (!assignment.left.isInstanceOf[MoveTarget]) {
+            //todo: I dont know what to do
+            throw new RuntimeException("We all gonna die")
+          }
+
+          // not handled pr[1, 1] = 150
+          val targetName: String = assignment.left.asInstanceOf[Identifier].ident //todo: I am not sure, need to discuss
+          val targetRegister: PositionRegister = PositionRegister(getPRIndex(targetName))
+          var provider: MoveRegister = null
+
+          assignment.right match {
+            case identifier: Identifier =>
+              provider = PositionRegister(getPRIndex(identifier.ident))
+            case typeOperand: TypeOperand =>
+              provider = handleTypeOperand(typeOperand)
+            case _ => ???
+          }
+
+          PointAssignment(targetRegister, provider)
       }
 
       fanucInstructions += instruction
     })
 
 
+    val positions: List[Position] = convertPoints(points.toList)
     (fanucInstructions.toList, positions)
   }
 
@@ -91,6 +101,20 @@ class FanucConverter(program: Program) {
     val cartesianPoint: CartesianPoint = CartesianPoint(uTool, uFrame, cartesianCoordinates, null) //todo: what is expected to use as config?
 
     cartesianPoint
+  }
+
+  private[this] def savePoint(cartesianPoint: CartesianPoint) = {
+    points += cartesianPoint
+  }
+
+  private[this] def handleTypeOperand(typeOperand: TypeOperand): PointRegister = {
+    val point: Point = typeOperand.typeLiteral.asInstanceOf[Point]
+    val params: Map[String, Operand] = typeOperand.parameters
+
+    val cartesianPoint: CartesianPoint = buildCartesianPoint(params, uFrame = 0, uTool = 0) //TODO: IT IS NOT CORRECT
+    savePoint(cartesianPoint)
+
+    PointRegister(getPointIndex())
   }
 
   private[this] def convertSmoothness(smoothess: Int): SmoothnessType = {
@@ -113,4 +137,9 @@ class FanucConverter(program: Program) {
   private[this] def getFreePRIndex: Int = {
     { positionRegistersCount += 1; positionRegistersCount }
   }
+
+  private[this] def convertPoints(points: List[CartesianPoint]): List[Position] = {
+    points.map(Position(_))
+  }
+
 }
