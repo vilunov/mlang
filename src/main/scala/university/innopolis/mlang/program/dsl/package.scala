@@ -34,7 +34,7 @@ package object dsl extends TypesMixin with StatementsMixin {
 
     lazy val typeOperand: MoveTarget = TypeOperand(
       Point,
-      Map("x" -> 1.0, "y" -> 1.0, "z" -> 1.0, "w" -> 1.0, "r" -> 1.0, "p" -> 1.0)
+      Map("x" -> x, "y" -> y, "z" -> z, "w" -> w, "r" -> r, "p" -> p)
         .mapValues(FloatLiteral),
     )
   }
