@@ -8,6 +8,9 @@ import scala.collection.mutable
 class FanucConverter(program: Program) {
   val positionRegisters: mutable.Map[String, Int] = mutable.Map[String, Int]()
   val defaultSpeed: Int = 100
+  val defaultSmoothness: Int = 0
+  val defaultTrajectory: String = "linear"
+
   var positionRegistersCount: Int = 0
   var pointRegistersCount: Int = 0
 
@@ -40,9 +43,9 @@ class FanucConverter(program: Program) {
           if (params.isEmpty) { // default movement
             instruction = LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
           } else {
-            val trajectory: StringLiteral = params("trajectory").asInstanceOf[StringLiteral]
-            val speed: Int = params("speed").asInstanceOf[IntLiteral].value
-            val smoothness: Int = params("smoothness").asInstanceOf[IntLiteral].value
+            val trajectory: StringLiteral = params.getOrElse("trajectory", StringLiteral(defaultTrajectory)).asInstanceOf[StringLiteral]
+            val speed: Int = params.getOrElse("speed", IntLiteral(defaultSpeed)).asInstanceOf[IntLiteral].value
+            val smoothness: Int = params.getOrElse("smoothness", IntLiteral(defaultSmoothness)).asInstanceOf[IntLiteral].value
             val smoothnessType: SmoothnessType = convertSmoothness(smoothness)
 
             //todo: how to differentiate OtherMMSec, etc.???
@@ -57,7 +60,6 @@ class FanucConverter(program: Program) {
             }
           }
         case assignment: AssignmentStatement =>
-
           assignment.left match {
             case moveTarget: MoveTarget =>
               // Handles register = register
@@ -110,7 +112,7 @@ class FanucConverter(program: Program) {
   }
 
   private[this] def handleTypeOperand(typeOperand: TypeOperand): PointRegister = {
-    val point: Point = typeOperand.typeLiteral.asInstanceOf[Point]
+//    val point: Point = typeOperand.typeLiteral.asInstanceOf[Point]
     val params: Map[String, Operand] = typeOperand.parameters
 
     val cartesianPoint: CartesianPoint = buildCartesianPoint(params, uFrame = 0, uTool = 0) //TODO: IT IS NOT CORRECT
@@ -123,8 +125,8 @@ class FanucConverter(program: Program) {
     require(smoothess >= 0 && smoothess <= 100)
 
     smoothess match {
-      case 100 => SmoothnessFine
-      case x if x < 100 =>  SmoothnessCNT(x)
+      case 0 => SmoothnessFine
+      case x if x > 0 =>  SmoothnessCNT(x)
     }
   }
 
