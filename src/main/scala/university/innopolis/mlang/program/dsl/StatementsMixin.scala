@@ -14,9 +14,8 @@ private[dsl] trait StatementsMixin {
       TypeOperand(Point, params),
       Map(
         "speed" -> velocity.toVelocityProperty,
-        "trajectory" -> trajectory.toTrajectoryProperty,
         "smoothness" -> smoothness.toSmoothnessProperty,
-      ).collect { case (a, Some(b)) => (a, b) },
+      ).collect { case (a, Some(b)) => (a, b) } ++ trajectory.toTrajectoryProperty,
     ))
   }
 

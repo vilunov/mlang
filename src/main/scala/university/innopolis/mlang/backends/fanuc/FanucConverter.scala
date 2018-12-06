@@ -4,7 +4,7 @@ import scala.collection.mutable
 
 import university.innopolis.mlang.program.ast._
 
-class FanucConverter(program: Program) {
+private[fanuc] class FanucConverter(program: Program) {
   val positionRegisters: mutable.Map[String, Int] = mutable.Map[String, Int]()
   val defaultSpeed: Int = 100
   val defaultSmoothness: Int = 0
@@ -24,12 +24,7 @@ class FanucConverter(program: Program) {
       case move: MoveCommand =>
         val target: MoveTarget = move.moveTarget
         val params: Map[String, Operand] = move.parameters
-        val register: MoveRegister = target match {
-          case identifier: Identifier =>
-            PositionRegister(getPRIndex(identifier.ident))
-          case typeOperand: TypeOperand =>
-            handleTypeOperand(typeOperand)
-        }
+        val register: MoveRegister = handleMoveTarget(target)
 
         if (params.isEmpty) { // default movement
           fanucInstructions += LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
@@ -37,6 +32,7 @@ class FanucConverter(program: Program) {
           val trajectory: StringLiteral = params.getOrElse("trajectory", StringLiteral(defaultTrajectory)).asInstanceOf[StringLiteral]
           val speed: Int = params.getOrElse("speed", IntLiteral(defaultSpeed)).asInstanceOf[IntLiteral].value
           val smoothness: Int = params.getOrElse("smoothness", IntLiteral(defaultSmoothness)).asInstanceOf[IntLiteral].value
+          val secondary = params.get("secondary").map(_.asInstanceOf[MoveTarget]).map(handleMoveTarget)
           val smoothnessType: SmoothnessType = convertSmoothness(smoothness)
 
           //todo: how to differentiate OtherMMSec, etc.???
@@ -48,9 +44,9 @@ class FanucConverter(program: Program) {
             case "joint" =>
               JointInstruction(register, speed, JointPercent, smoothnessType)
             case "arc" =>
-              ArcInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              ArcInstruction(register, secondPointRegister = secondary.get, speed, OtherMMSec, smoothnessType)
             case "circular" =>
-              CircularInstruction(register, secondPointRegister = ???, speed, OtherMMSec, smoothnessType) //todo: me
+              CircularInstruction(register, secondPointRegister = secondary.get, speed, OtherMMSec, smoothnessType)
             case _ => ???
           })
         }
@@ -99,6 +95,13 @@ class FanucConverter(program: Program) {
     val cartesianPoint: CartesianPoint = CartesianPoint(uTool, uFrame, cartesianCoordinates)
 
     cartesianPoint
+  }
+
+  private[this] def handleMoveTarget(target: MoveTarget): MoveRegister = target match {
+    case identifier: Identifier =>
+      PositionRegister(getPRIndex(identifier.ident))
+    case typeOperand: TypeOperand =>
+      handleTypeOperand(typeOperand)
   }
 
   // сохраняет point-литерал в /POS блок

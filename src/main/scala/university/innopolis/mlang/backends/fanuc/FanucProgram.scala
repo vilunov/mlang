@@ -194,7 +194,7 @@ case class LinearInstruction(pointRegister: MoveRegister,
   extends MoveInstruction('L')
 
 case class CircularInstruction(pointRegister: MoveRegister,
-                               secondPointRegister: PointRegister,
+                               secondPointRegister: MoveRegister,
                                velocity: Int,
                                velocityType: OtherVelocityType,
                                smoothnessType: SmoothnessType)
@@ -211,7 +211,7 @@ case class JointInstruction(pointRegister: MoveRegister,
   extends MoveInstruction('J')
 
 case class ArcInstruction(pointRegister: MoveRegister,
-                          secondPointRegister: PointRegister,
+                          secondPointRegister: MoveRegister,
                           velocity: Int,
                           velocityType: OtherVelocityType,
                           smoothnessType: SmoothnessType)

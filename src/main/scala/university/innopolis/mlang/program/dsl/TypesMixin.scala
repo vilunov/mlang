@@ -4,11 +4,18 @@ import university.innopolis.mlang.program.ast._
 
 private[dsl] trait TrajectoryMixin {
   sealed trait Trajectory {
-    def toTrajectoryProperty: Option[Operand]
+    def toTrajectoryProperty: Map[String, Operand]
   }
 
   case object Joint extends Trajectory {
-    override def toTrajectoryProperty: Option[Operand] = Some(StringLiteral("JOINT"))
+    override def toTrajectoryProperty: Map[String, Operand] = Map("trajectory" -> StringLiteral("JOINT"))
+  }
+
+  final case class Circular(secondary: Cartesian) extends Trajectory {
+    override def toTrajectoryProperty: Map[String, Operand] = Map(
+      "trajectory" -> StringLiteral("CIRCULAR"),
+      "secondary" -> secondary.typeOperand,
+    )
   }
 }
 
@@ -39,7 +46,7 @@ private[dsl] trait VelocityMixin {
 
 private[dsl] trait TypesMixin extends TrajectoryMixin with VelocityMixin with SmoothnessMixing {
   case object Undefined extends Trajectory with Velocity with Smoothness {
-    override val toTrajectoryProperty: Option[Operand] = None
+    override val toTrajectoryProperty: Map[String, Operand] = Map.empty
     override val toVelocityProperty: Option[Operand] = None
     override val toSmoothnessProperty: Option[Operand] = None
   }

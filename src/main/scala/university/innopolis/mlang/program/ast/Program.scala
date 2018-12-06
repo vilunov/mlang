@@ -24,7 +24,8 @@ final case class StringLiteral(value: String) extends Operand
 final case class FloatLiteral(value: Double) extends Operand
 final case class BooleanLiteral(value: Boolean) extends Operand
 final case class ExpressionOperand(expression: Expression) extends Operand
-final case class TypeOperand(typeLiteral: TypeLiteral, parameters: Map[String, Operand]) extends MoveTarget
+final case class TypeOperand(typeLiteral: TypeLiteral,
+                             parameters: Map[String, Operand] = Map.empty) extends MoveTarget
 
 final case class BinaryExpression(binOp: BinOp, left: Expression, right: Expression) extends Expression
 final case class DotExpression(expression: Expression, ident: String) extends Expression
@@ -33,7 +34,8 @@ final case class StatementBlock(statements: List[Statement])
 
 sealed trait Statement
 sealed trait Command extends Statement
-final case class MoveCommand(moveTarget: MoveTarget, parameters: Map[String, Operand] = Map.empty) extends Command
+final case class MoveCommand(moveTarget: MoveTarget,
+                             parameters: Map[String, Operand] = Map.empty) extends Command
 
 final case class AssignmentStatement(left: Expression, right: Expression) extends Statement
 final case class IfStatement(condition: Expression,
