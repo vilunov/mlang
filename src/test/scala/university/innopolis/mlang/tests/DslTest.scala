@@ -9,7 +9,7 @@ trait DslSpecData {
   lazy val programOneliner: Program = {
     implicit val builder: BuildingContext = new BuildingContext
 
-    move(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+    move(Cartesian(1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
 
     compile(emit())
   }
