@@ -2,8 +2,6 @@ package university.innopolis.mlang.program
 
 import scala.collection.JavaConverters._
 import org.antlr.v4.runtime._
-import university.innopolis.mlang.backends.converter.ASTConverter
-import university.innopolis.mlang.backends.fanuc.PointAssignment
 import university.innopolis.mlang.parser._
 import university.innopolis.mlang.parser.MlangParser._
 
