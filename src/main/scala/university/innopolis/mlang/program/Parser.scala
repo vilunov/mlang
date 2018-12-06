@@ -26,14 +26,17 @@ object Parser {
     * @return inner AST representation
     */
   def parse(input: String): Program = {
+    // initialize ANTLR stack
     val stream = CharStreams.fromString(input)
     val lexer = new MlangLexer(stream)
     val tokens = new CommonTokenStream(lexer)
     val parser = new MlangParser(tokens)
     parser.addErrorListener(ThrowErrorListener)
 
+    // get main rule tree
     val program = parser.program()
 
+    // parse memory and program blocks
     val memory: Map[String, Expression] = this.memory(program.memoryBlock())
     val instructions: List[Statement] = statements(program.programBlock().statementBlock())
 
@@ -45,7 +48,9 @@ object Parser {
     .toMap
 
   def command(input: CommandContext): Command = {
+    // there is just one command, which is moveCommand, for now
     val command = input.moveCommand()
+    // parse target, which is either an identifier or a type literal
     val target = command.moveTarget() match {
       case j if j.IDENTIFIER() != null =>
         Identifier(j.IDENTIFIER().getText)
@@ -53,6 +58,7 @@ object Parser {
         typeOperand(j.typeExpression())
     }
 
+    // parse optional parameters
     var parameters: Map[String, Operand] = Map.empty
     if (command.parameterList() != null) {
       parameters = this.parameters(command.parameterList())
@@ -64,14 +70,18 @@ object Parser {
   def statements(input: StatementBlockContext): List[Statement] = input.statement().asScala
     .map {
       case i if i.command() != null =>
+        // command
         command(i.command())
       case i if i.assignStatement() != null =>
+        // assignment
         val assignExpressions = i.assignStatement().expression().asScala
         AssignmentStatement(expression(assignExpressions.head), expression(assignExpressions(1)))
       case i if i.ifStatement() != null =>
+        // if statement
         val ifStatement = i.ifStatement()
-        var elseStatements: Option[List[Statement]] = None
 
+        // parse optional else block
+        var elseStatements: Option[List[Statement]] = None
         if (ifStatement.statementBlock().asScala.size > 1) {
           elseStatements = Some(statements(ifStatement.statementBlock(1)))
         }
@@ -82,10 +92,13 @@ object Parser {
           elseStatements
         )
       case i if i.forStatement() != null =>
+        // for statement
         val forStatment = i.forStatement()
 
+        // parse the for clause
         val forClause = forStatment.forClause()
         val forClauseExpressions = forClause.range().expression().asScala
+        // optional variable in range, i.e. can be 'i in 1..5' or just '1..5'
         var clauseID: Option[Identifier] = None
         if (forClause.IDENTIFIER() != null) {
           clauseID = Some(Identifier(forClause.IDENTIFIER().getText))
@@ -100,12 +113,31 @@ object Parser {
     }
     .toList
 
+  /**
+    * Retrieves list of parameters as a map of [[Operand]]'s by their identifiers
+    * from a given [[ParameterListContext]] ANTLR node.
+    *
+    * @param input ANTLR's [[ParameterListContext]] node to parse.
+    * @return parsed map of parameters.
+    */
   def parameters(input: ParameterListContext): Map[String, Operand] = input.parameterDecl().asScala
     .map { i => i.IDENTIFIER().getText -> operand(i.operand()) }
     .toMap
 
+  /**
+    * Retrieves an [[TypeOperand]] from a given [[TypeExpressionContext]] ANTLR node.
+    *
+    * @param input ANTLR's [[TypeExpressionContext]] node to map to [[TypeOperand]].
+    * @return parsed [[TypeOperand]] subclass.
+    */
   def typeOperand(input: TypeExpressionContext): TypeOperand = TypeOperand(Point, parameters(input.parameterList()))
 
+  /**
+    * Retrieves an [[Operand]] from a given [[OperandContext]] ANTLR node.
+    *
+    * @param input ANTLR's [[OperandContext]] node to map to [[Operand]].
+    * @return parsed [[Operand]] subclass.
+    */
   def operand(input: OperandContext): Operand = input match {
     case i if i.IDENTIFIER() != null =>
       // simple identifier operands
