@@ -1,7 +1,8 @@
 package university.innopolis.mlang.backends.fanuc
 
-import scala.collection.mutable
+import university.innopolis.mlang.program.ast
 
+import scala.collection.mutable
 import university.innopolis.mlang.program.ast._
 
 private[fanuc] class FanucConverter(program: Program) {
@@ -20,6 +21,8 @@ private[fanuc] class FanucConverter(program: Program) {
     val statements = program.statements
     val memory = program.memory
 
+    unloadPositions(memory)
+
     statements.foreach {
       case move: MoveCommand =>
         val target: MoveTarget = move.moveTarget
@@ -27,7 +30,7 @@ private[fanuc] class FanucConverter(program: Program) {
         val register: MoveRegister = handleMoveTarget(target)
 
         if (params.isEmpty) { // default movement
-          fanucInstructions += LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine)
+          storeInstruction(LinearInstruction(register, defaultSpeed, OtherMMSec, SmoothnessFine))
         } else {
           val trajectory: StringLiteral = params.getOrElse("trajectory", StringLiteral(defaultTrajectory)).asInstanceOf[StringLiteral]
           val speed: Int = params.getOrElse("speed", IntLiteral(defaultSpeed)).asInstanceOf[IntLiteral].value
@@ -38,7 +41,7 @@ private[fanuc] class FanucConverter(program: Program) {
           //todo: how to differentiate OtherMMSec, etc.???
 
           // todo: sry, I know code below can be done better but I dont know how
-          fanucInstructions += (trajectory.value.toLowerCase() match {
+          storeInstruction(trajectory.value.toLowerCase() match {
             case "linear" =>
               LinearInstruction(register, speed, OtherMMSec, smoothnessType)
             case "joint" =>
@@ -67,7 +70,7 @@ private[fanuc] class FanucConverter(program: Program) {
               case _ => ???
             }
 
-            fanucInstructions += PointAssignment(targetRegister, provider)
+            storeInstruction(PointAssignment(targetRegister, provider))
           case UnaryExpression(dataRegister: ExpressionOperand, Nil) =>
             //todo: here I wished to convert R[1] = R[2] + ..., but not sure what is it
             ???
@@ -78,6 +81,23 @@ private[fanuc] class FanucConverter(program: Program) {
 
     val positions: List[Position] = convertPoints(points.toList)
     (fanucInstructions.toList, positions)
+  }
+
+  private[this] def unloadPositions(memory: Map[String, ast.Expression]) = {
+    memory.foreach[Unit]{case (key:String, value: ast.Expression) => {
+      val operand = value.asInstanceOf[UnaryExpression].operand
+      operand match {
+        case typeOperand: TypeOperand =>
+          val point: PointRegister = handleTypeOperand(typeOperand)
+          val pr: PositionRegister = PositionRegister(getPRIndex(key))
+          storeInstruction(PointAssignment(pr, point))
+        case _ => ???
+      }
+    }}
+  }
+
+  private[this] def storeInstruction(instruction: FanucInstruction): Unit = {
+    fanucInstructions += instruction
   }
 
   private[this] def buildPoint(params: Map[String, Operand], uTool: Int = 1, uFrame: Int = 1): Point = {
