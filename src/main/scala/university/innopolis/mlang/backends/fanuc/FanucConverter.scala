@@ -97,7 +97,20 @@ private[fanuc] class FanucConverter(program: ast.Program) {
         val op: Operator = convertOperator(binExpr.binOp)
         BinaryExpression(op, convertExpression(binExpr.left), convertExpression(binExpr.right))
       case unary: ast.UnaryExpression =>
+        if (unary.unaryOp.isEmpty) {
+          convertOperand(unary.operand)
+        } else {
+          ??? // Lots of binary expressions
+        }
+    }
+  }
 
+  private[this] def convertOperand(operand: ast.Operand): Expression = {
+    operand match {
+      case eOp: ast.ExpressionOperand => convertExpression(eOp.expression)
+      case iLit: ast.IntLiteral => IntegerExpression(iLit.value)
+      case fLit: ast.FloatLiteral => FloatExpression(fLit.value.toFloat) // from double to float
+      case _ => ??? // TODO: Register is not Expression. PR[i, k] = PR[g, j] + 15 not valid
     }
   }
 
