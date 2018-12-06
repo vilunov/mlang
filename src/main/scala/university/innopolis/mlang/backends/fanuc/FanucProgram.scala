@@ -211,6 +211,7 @@ case class JointInstruction(pointRegister: MoveRegister,
   extends MoveInstruction('J')
 
 case class ArcInstruction(pointRegister: MoveRegister,
+                          secondPointRegister: PointRegister,
                           velocity: Int,
                           velocityType: OtherVelocityType,
                           smoothnessType: SmoothnessType)
