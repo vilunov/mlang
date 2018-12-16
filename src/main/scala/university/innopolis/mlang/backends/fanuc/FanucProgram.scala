@@ -126,6 +126,10 @@ case class IntegerExpression(value: Int) extends Expression {
   override def toString: String = value.toString
 }
 
+case class FloatExpression(value: Float) extends Expression {
+  override def toString: String = f"$value%.2f"
+}
+
 sealed trait Operator
 class OperatorImpl(val representation: String) extends Operator {
   override def toString: String = representation
